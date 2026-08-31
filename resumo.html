@@ -246,7 +246,8 @@ function render() {
     c1.appendChild(el('h4', '', 'Composição do mês'));
     c1.appendChild(linha('Mensalidades recebidas', moneyC(r.recebido)));
     c1.appendChild(linha('Recebido de atrasados', moneyC(r.atrRec)));
-    r.desp.forEach(d => c1.appendChild(linha(d.nome, '− ' + moneyC(d.valor), 'desp')));
+    r.desp.slice().sort((a, b) => (a.data || '').localeCompare(b.data || ''))
+      .forEach(d => c1.appendChild(linha((d.data ? br(d.data) + '  ' : '') + d.nome, '− ' + moneyC(d.valor), 'desp')));
     if (!r.desp.length) c1.appendChild(linha('Sem despesas lançadas', '—', 'desp'));
     c1.appendChild(linha('Saldo', (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo)), r.saldo < 0 ? 'tot neg' : 'tot'));
     cols.appendChild(c1);

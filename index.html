@@ -240,6 +240,13 @@ const SUPABASE_KEY = 'sb_publishable_1sohqR4OnESmTng3VL727w_Prvp8Zj4';
 const usaSupabase = () => !!(SUPABASE_URL && SUPABASE_KEY);
 
 const KEY = 'ledplus:carteira:v3';
+const DESPESAS_PLANEJADAS = [
+  ['Designers', 350],
+  ['Manutenção - Tico', 300],
+  ['Internet + Celular', 385],
+  ['Apps mensal (chatgpt + capcut + memória google)', 115],
+  ['Contadora Débora', 125]
+];
 const DIVISAO = { 'OLINDINA': [['Ramon', 50], ['Anai', 50]], 'NOVA SOURE': [['Ramon', 75], ['Anai', 25]] };
 const $ = s => document.querySelector(s);
 const el = (t, c, txt) => { const n = document.createElement(t); if (c) n.className = c; if (txt != null) n.textContent = txt; return n; };
@@ -361,6 +368,7 @@ function normalizar() {
     delete c.segmento;
   });
   DB.atrasados.forEach(a => { a.nome = padroniza(a.nome); a.recebidos = a.recebidos || []; });
+  DB.despesas.forEach(d => { if (!d.data) d.data = d.ref + '-01'; });
 }
 async function salvar() {
   if (memoriaSomente) { flag(false, 'Só nesta sessão'); return; }
@@ -536,8 +544,22 @@ function modal(titulo, campos, aoConfirmar, rotulo) {
       c.opcoes.forEach(([v, t]) => { const o = el('option', '', t); o.value = v; if (v === c.valor) o.selected = true; i.appendChild(o); });
     } else if (c.tipo === 'textarea') {
       i = el('textarea'); i.rows = 2; i.value = c.valor || '';
+    } else if (c.tipo === 'lista') {
+      i = el('input'); i.type = 'text'; i.value = c.valor || '';
+      if (c.ph) i.placeholder = c.ph;
+      i.setAttribute('list', 'dl_' + c.id);
+      const dl = el('datalist'); dl.id = 'dl_' + c.id;
+      c.opcoes.forEach(([n, v]) => { const o = el('option'); o.value = n; o.label = fmtMoedaEdit(v); dl.appendChild(o); });
+      f.appendChild(dl);
+      i.oninput = () => {
+        const m = c.opcoes.find(o => o[0].toLowerCase() === i.value.trim().toLowerCase());
+        if (m && c.preenche) {
+          const alvo = campos.find(x => x.id === c.preenche);
+          if (alvo && alvo._el) alvo._el.value = fmtMoedaEdit(m[1]);
+        }
+      };
     } else {
-      i = el('input'); i.type = c.tipo === 'hora' ? 'time' : 'text';
+      i = el('input'); i.type = c.tipo === 'hora' ? 'time' : c.tipo === 'data' ? 'date' : 'text';
       i.value = c.valor || ''; if (c.ph) i.placeholder = c.ph;
       if (c.mask) i.setAttribute('data-mask', c.mask);
     }
@@ -730,7 +752,8 @@ function telaCidade() {
   /* resultado do mês */
   const atrRec = DB.atrasados.filter(a => a.cidade === aba)
     .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesRef).reduce((x, r) => x + r.valor, 0), 0);
-  const desp = DB.despesas.filter(d => d.cidade === aba && d.ref === mesRef);
+  const desp = DB.despesas.filter(d => d.cidade === aba && d.ref === mesRef)
+    .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   const totDesp = desp.reduce((t, d) => t + d.valor, 0);
   const saldo = recebido + atrRec - totDesp;
   tela.appendChild(bloco('Resultado do mês', cidadeNome(aba), ['+ Despesa', novaDespesa]));
@@ -742,7 +765,12 @@ function telaCidade() {
       l.appendChild(el('span', '', 'Nenhuma despesa lançada em ' + mesNome(mesRef) + '.'));
       const b = el('button', 'linbt', `Repetir as ${ant.length} de ${mesNome(somaMes(mesRef, -1))}`);
       b.onclick = async () => {
-        ant.forEach(d => DB.despesas.push({ id: uid(), cidade: aba, ref: mesRef, nome: d.nome, valor: d.valor }));
+        ant.forEach(d => {
+          const dia = (d.data || '').slice(8, 10) || '01';
+          const ultimo = new Date(+mesRef.slice(0, 4), +mesRef.slice(5, 7), 0).getDate();
+          const data = mesRef + '-' + String(Math.min(+dia, ultimo)).padStart(2, '0');
+          DB.despesas.push({ id: uid(), cidade: aba, ref: mesRef, data, nome: d.nome, valor: d.valor });
+        });
         await salvar(); render();
       };
       l.appendChild(b); rb.appendChild(l);
@@ -751,7 +779,7 @@ function telaCidade() {
   rb.appendChild(linha('Recebido de mensalidades', money(recebido)));
   rb.appendChild(linha('Recebido de atrasados', money(atrRec)));
   desp.forEach(d => {
-    const l = linha(d.nome, '− ' + money(d.valor), 'desp');
+    const l = linha((d.data ? br(d.data) + '  ' : '') + d.nome, '− ' + money(d.valor), 'desp');
     const x = el('button', 'linx', '✕'); x.title = 'Remover despesa';
     x.onclick = async () => {
       if (!confirm('Remover a despesa "' + d.nome + '"?')) return;
@@ -791,12 +819,19 @@ function linha(rot, val, cls) {
   return l;
 }
 function novaDespesa() {
-  modal('Despesa de ' + cidadeNome(aba) + ' em ' + mesNome(mesRef), [
-    { id: 'nome', rot: 'Descrição', valor: '', ph: 'Internet, contadora, manutenção...' },
+  const hojeNoMes = mesRef === mesHoje ? hojeIso : mesRef + '-01';
+  modal('Nova despesa · ' + cidadeNome(aba), [
+    { id: 'data', tipo: 'data', rot: 'Data', valor: hojeNoMes },
+    { id: 'nome', tipo: 'lista', rot: 'Descrição', valor: '', ph: 'Escolha uma planejada ou digite',
+      opcoes: DESPESAS_PLANEJADAS, preenche: 'valor' },
     { id: 'valor', rot: 'Valor', mask: 'moeda', valor: '', ph: 'R$ 0,00' }
   ], async v => {
-    if (!v.nome.trim()) { alert('Informe a descrição.'); return true; }
-    DB.despesas.push({ id: uid(), cidade: aba, ref: mesRef, nome: v.nome.trim(), valor: desmascMoeda(v.valor) });
+    if (!v.nome.trim()) { alert('Informe a descrição da despesa.'); return true; }
+    const data = v.data || hojeNoMes;
+    DB.despesas.push({
+      id: uid(), cidade: aba, ref: data.slice(0, 7), data,
+      nome: v.nome.trim(), valor: desmascMoeda(v.valor)
+    });
     await salvar(); render();
   }, 'Lançar');
 }
