@@ -307,7 +307,7 @@ function render() {
     h.appendChild(el('em', '', moneyC(tot) + ' · ' + dev.length + ' devedores'));
     bx.appendChild(h);
     if (!dev.length) bx.appendChild(el('div', 'lin desp', 'Nenhum devedor em aberto.'));
-    dev.slice(0, 6).forEach(a => {
+    dev.forEach(a => {
       const l = el('div', 'lin');
       const on = (a.status || '').toLowerCase() === 'online';
       const nm = el('span', '', a.nome);
@@ -316,7 +316,7 @@ function render() {
       l.appendChild(el('b', '', moneyC(a.saldo)));
       bx.appendChild(l);
     });
-    if (dev.length > 6) bx.appendChild(linha(`+ ${dev.length - 6} devedores menores`, '', 'desp'));
+    if (dev.length) bx.appendChild(linha('Total em aberto', moneyC(tot), 'tot'));
     bx.appendChild(linha('Ainda no ar devendo', noAr + ' de ' + dev.length, 'desp'));
     ing.appendChild(bx);
   });
