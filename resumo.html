@@ -1,0 +1,323 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED+ Publicidade — Resumo do negócio</title>
+<style>
+:root{
+  --bg:#F4F4F2; --surface:#FFFFFF; --surface-2:#FAFAF7; --border:#E5E3DD; --line:#EDEBE6;
+  --text:#1B1B1B; --muted:#6E7280; --muted-2:#9AA0A6;
+  --accent:#1F5FBF; --accent-2:#7A9FD8; --ok:#15A34A; --warn:#E08A0B; --bad:#D6323C; --dead:#D5D3CD;
+  --radius:12px; --shadow:0 1px 2px rgba(20,20,20,.05);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#15171A; --surface:#1D2024; --surface-2:#23262B; --border:#2E3238; --line:#292D33;
+        --text:#ECEDEE; --muted:#9BA1A8; --muted-2:#787F87; --dead:#3A3F46; --shadow:none;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 14px 60px}
+h1,h2,h3{margin:0;font-weight:600}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.brand{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.brand small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+.mesref{font-size:12px;color:var(--muted);margin:0 2px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mesnav{display:flex;align-items:center;gap:4px}
+.mesnav b{font-size:13.5px;color:var(--text);font-weight:600;min-width:130px;text-align:center}
+.mesbt{background:var(--surface);border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:8px;line-height:1;padding:0}
+.mesbt.hoje{width:auto;padding:0 10px;font-size:12.5px;color:var(--accent)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
+.kpi span{display:block;font-size:11.5px;color:var(--muted);line-height:1.3;min-height:30px}
+.kpi b{font-size:23px;font-weight:600;line-height:1.1;display:block;margin-top:5px;letter-spacing:-.02em}
+.kpi em{font-style:normal;display:block;font-size:11.5px;color:var(--muted-2);margin-top:3px}
+.kpi.good b{color:var(--ok)} .kpi.warn b{color:var(--warn)} .kpi.alert b{color:var(--bad)}
+
+.blockhead{display:flex;align-items:baseline;gap:9px;margin:24px 2px 8px;flex-wrap:wrap}
+.blockhead h2{font-size:15px}
+.blockhead em{font-style:normal;font-size:12px;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cidade{padding:16px 16px 14px}
+.cidade h3{font-size:15px;display:flex;align-items:baseline;gap:8px}
+.cidade h3 em{font-style:normal;font-size:12px;color:var(--muted);margin-left:auto}
+.lin{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.lin:last-child{border-bottom:0}
+.lin b{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums}
+.lin.desp span,.lin.desp b{color:var(--muted)}
+.lin.tot{border-top:1px solid var(--border);border-bottom:0;margin-top:4px;padding-top:11px;font-size:15px}
+.lin.tot b{font-weight:600;color:var(--ok)}
+.lin.tot.neg b{color:var(--bad)}
+.barra{height:8px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin:10px 0 4px;display:flex}
+.barra i{display:block;height:100%}
+.legb{display:flex;gap:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.legb i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px}
+
+.tab{width:100%;border-collapse:collapse;font-size:13.5px}
+.tab th{text-align:left;font-weight:500;color:var(--muted-2);font-size:11.5px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tab td{padding:10px 14px;border-bottom:1px solid var(--line)}
+.tab tr:last-child td{border-bottom:0}
+.tab td.r,.tab th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:11.5px;border:1px solid var(--border);border-radius:20px;padding:2px 9px;color:var(--muted)}
+.tag.on{color:var(--ok);border-color:#BFE3CB} .tag.off{color:var(--warn);border-color:#F0D6A2}
+.mini-bar{height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:5px}
+.mini-bar i{display:block;height:100%;background:var(--accent)}
+.evo{display:flex;align-items:flex-end;gap:14px;padding:18px 16px 10px;min-height:150px}
+.evocol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.evobars{display:flex;align-items:flex-end;gap:3px;height:110px}
+.evobars i{width:16px;border-radius:3px 3px 0 0;display:block}
+.evolab{font-size:11.5px;color:var(--muted)}
+.empty{padding:16px;color:var(--muted);font-size:13px}
+.aviso{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;
+  font-size:12.5px;color:var(--muted);margin-top:20px}
+.rodape{text-align:center;font-size:12px;color:var(--muted-2);margin-top:26px}
+@media (max-width:820px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .duas{grid-template-columns:1fr}
+  .evobars i{width:11px}
+}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">LED<span>+</span> Publicidade<small>Resumo do negócio</small></div>
+    <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)">
+      <a href="index.html" style="color:var(--accent);text-decoration:none">← Gestão da carteira</a>
+      <span id="atualizado"></span>
+    </div>
+  </div>
+  <div class="mesref" id="mesref"></div>
+  <div id="tela"><div class="empty">Carregando os dados…</div></div>
+  <div class="rodape">Não se gerencia o que não se conhece.</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://oxqrrebomtdzecxsfpip.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1sohqR4OnESmTng3VL727w_Prvp8Zj4';
+const DIVISAO = { 'OLINDINA': [['Ramon', 50], ['Anai', 50]], 'NOVA SOURE': [['Ramon', 75], ['Anai', 25]] };
+const CIDADES = ['OLINDINA', 'NOVA SOURE'];
+
+const $ = s => document.querySelector(s);
+const el = (t, c, txt) => { const n = document.createElement(t); if (c) n.className = c; if (txt != null) n.textContent = txt; return n; };
+const money = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyC = v => 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR');
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MESESL = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const mesNome = r => MESES[+r.slice(5, 7) - 1] + '/' + r.slice(2, 4);
+const cidadeNome = c => c === 'NOVA SOURE' ? 'Nova Soure' : 'Olindina';
+const br = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '—';
+const hojeIso = new Date().toISOString().slice(0, 10);
+const mesHoje = hojeIso.slice(0, 7);
+let mesRef = mesHoje, DB = null;
+function somaMes(ref, n) {
+  let [y, m] = ref.split('-').map(Number);
+  m += n; y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1;
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+
+/* ---------- dados ---------- */
+async function carregar() {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?id=eq.1&select=dados,atualizado_em`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+  if (!r.ok) throw new Error('Supabase respondeu ' + r.status);
+  const j = await r.json();
+  if (!j[0] || !j[0].dados || !j[0].dados.clientes) throw new Error('A base ainda está vazia');
+  DB = j[0].dados;
+  DB.despesas = DB.despesas || []; DB.atrasados = DB.atrasados || []; DB.prospects = DB.prospects || [];
+  if (j[0].atualizado_em) {
+    const d = new Date(j[0].atualizado_em);
+    $('#atualizado').textContent = 'Atualizado em ' + d.toLocaleDateString('pt-BR') + ' às ' +
+      d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+}
+
+/* ---------- cálculos ---------- */
+const clientesDe = cid => DB.clientes.filter(c => c.conta === cid && c.ativo && c.tipo !== 'cortesia');
+const evsMes = (tipo, ref, cid) => DB.eventos.filter(e => e.tipo === tipo &&
+  (tipo === 'pagamento' ? (e.ref || e.data.slice(0, 7)) : e.data.slice(0, 7)) === ref &&
+  (!cid || DB.clientes.some(c => c.id === e.cli && c.conta === cid)));
+
+function resumoCidade(cid, ref) {
+  const cs = clientesDe(cid);
+  const recebido = evsMes('pagamento', ref, cid).reduce((s, e) => s + (e.valor || 0), 0);
+  const atrRec = DB.atrasados.filter(a => a.cidade === cid)
+    .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === ref).reduce((x, r) => x + r.valor, 0), 0);
+  const desp = DB.despesas.filter(d => d.cidade === cid && d.ref === ref);
+  const totDesp = desp.reduce((t, d) => t + d.valor, 0);
+  const contratada = cs.reduce((s, c) => s + (c.valor || 0), 0);
+  const pagos = cs.filter(c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === ref));
+  return {
+    cid, cs, recebido, atrRec, desp, totDesp, contratada, pagos,
+    receita: recebido + atrRec, saldo: recebido + atrRec - totDesp,
+    cortesias: DB.clientes.filter(c => c.conta === cid && c.ativo && c.tipo === 'cortesia').length,
+    devendo: DB.atrasados.filter(a => a.cidade === cid && a.saldo > 0),
+    trocas: evsMes('arte', ref, cid).length,
+    exclus: evsMes('exclusividade', ref, cid).length
+  };
+}
+
+/* ---------- render ---------- */
+function render() {
+  const mr = $('#mesref'); mr.innerHTML = '';
+  const nav = el('div', 'mesnav');
+  const ant = el('button', 'mesbt', '‹'); ant.onclick = () => { mesRef = somaMes(mesRef, -1); render(); };
+  const prox = el('button', 'mesbt', '›'); prox.onclick = () => { mesRef = somaMes(mesRef, 1); render(); };
+  nav.append(ant, el('b', '', MESESL[+mesRef.slice(5, 7) - 1] + ' de ' + mesRef.slice(0, 4)), prox);
+  if (mesRef !== mesHoje) {
+    const v = el('button', 'mesbt hoje', 'Voltar ao mês atual');
+    v.onclick = () => { mesRef = mesHoje; render(); };
+    nav.appendChild(v);
+  }
+  mr.appendChild(nav);
+
+  const tela = $('#tela'); tela.innerHTML = '';
+  const R = CIDADES.map(c => resumoCidade(c, mesRef));
+  const receita = R.reduce((s, r) => s + r.receita, 0);
+  const despesa = R.reduce((s, r) => s + r.totDesp, 0);
+  const saldo = receita - despesa;
+  const socios = {};
+  R.forEach(r => (DIVISAO[r.cid] || []).forEach(([q, p]) => socios[q] = (socios[q] || 0) + r.saldo * p / 100));
+
+  /* consolidado */
+  tela.appendChild(kpi([
+    ['Receita do mês', moneyC(receita), '', R.map(r => cidadeNome(r.cid).split(' ')[0] + ' ' + moneyC(r.receita)).join(' · ')],
+    ['Despesas do mês', moneyC(despesa), '', pct(despesa, receita) + '% da receita'],
+    ['Saldo do mês', (saldo < 0 ? '−' : '') + moneyC(Math.abs(saldo)), saldo < 0 ? 'alert' : 'good',
+      'margem de ' + pct(saldo, receita) + '%'],
+    ['Divisão entre sócios', Object.entries(socios).map(([q, v]) => q + ' ' + moneyC(v)).join('  ·  '), '', '50/50 em Olindina · 75/25 em Nova Soure']
+  ]));
+
+  /* por cidade */
+  tela.appendChild(cab('Como está cada cidade', 'receitas e despesas separadas'));
+  const duas = el('div', 'duas');
+  R.forEach(r => {
+    const b = el('div', 'box cidade');
+    const h = el('h3', '', cidadeNome(r.cid));
+    h.appendChild(el('em', '', r.cs.length + ' clientes' + (r.cortesias ? ' · ' + r.cortesias + ' cortesias' : '')));
+    b.appendChild(h);
+    b.appendChild(linha('Mensalidades recebidas', moneyC(r.recebido)));
+    b.appendChild(linha('Recebido de atrasados', moneyC(r.atrRec)));
+    r.desp.forEach(d => b.appendChild(linha(d.nome, '− ' + moneyC(d.valor), 'desp')));
+    if (!r.desp.length) b.appendChild(linha('Sem despesas lançadas', '—', 'desp'));
+    b.appendChild(linha('Saldo', (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo)), r.saldo < 0 ? 'tot neg' : 'tot'));
+    (DIVISAO[r.cid] || []).forEach(([q, p]) =>
+      b.appendChild(linha(`${p}% ${q}`, (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo) * p / 100), 'desp')));
+    duas.appendChild(b);
+  });
+  tela.appendChild(duas);
+
+  /* recebimento da carteira */
+  tela.appendChild(cab('Recebimento da carteira', 'quanto do contratado entrou em ' + mesNome(mesRef)));
+  const rc = el('div', 'box');
+  const t = el('table', 'tab');
+  t.innerHTML = '<tr><th>Cidade</th><th class="r">Contratado</th><th class="r">Recebido</th><th class="r">Clientes pagos</th><th class="r">Ticket médio</th></tr>';
+  R.forEach(r => {
+    const tr = el('tr');
+    const c1 = el('td'); c1.appendChild(el('div', '', cidadeNome(r.cid)));
+    const bar = el('div', 'mini-bar'); const i = el('i'); i.style.width = pct(r.recebido, r.contratada) + '%';
+    bar.appendChild(i); c1.appendChild(bar); tr.appendChild(c1);
+    tr.appendChild(el('td', 'r', moneyC(r.contratada)));
+    tr.appendChild(el('td', 'r', moneyC(r.recebido) + ' (' + pct(r.recebido, r.contratada) + '%)'));
+    tr.appendChild(el('td', 'r', r.pagos.length + ' de ' + r.cs.length));
+    tr.appendChild(el('td', 'r', moneyC(r.cs.length ? r.contratada / r.cs.length : 0)));
+    t.appendChild(tr);
+  });
+  rc.appendChild(t); tela.appendChild(rc);
+
+  /* evolução */
+  const meses = []; for (let k = 5; k >= 0; k--) meses.push(somaMes(mesRef, -k));
+  tela.appendChild(cab('Evolução dos últimos 6 meses', 'saldo de cada cidade'));
+  const ev = el('div', 'box');
+  const linhaEv = el('div', 'evo');
+  const vals = meses.map(m => CIDADES.map(c => resumoCidade(c, m).saldo));
+  const maxv = Math.max(1, ...vals.flat().map(Math.abs));
+  meses.forEach((m, k) => {
+    const col = el('div', 'evocol');
+    const bars = el('div', 'evobars');
+    vals[k].forEach((v, ci) => {
+      const i = el('i');
+      i.style.height = Math.max(2, Math.abs(v) / maxv * 105) + 'px';
+      i.style.background = v < 0 ? 'var(--bad)' : (ci === 0 ? 'var(--accent)' : 'var(--accent-2)');
+      i.title = cidadeNome(CIDADES[ci]) + ' · ' + mesNome(m) + ' · ' + moneyC(v);
+      bars.appendChild(i);
+    });
+    col.appendChild(bars);
+    col.appendChild(el('div', 'evolab', mesNome(m)));
+    linhaEv.appendChild(col);
+  });
+  ev.appendChild(linhaEv);
+  const lb = el('div', 'legb'); lb.style.padding = '0 16px 14px';
+  lb.innerHTML = '<span><i style="background:var(--accent)"></i>Olindina</span>' +
+    '<span><i style="background:var(--accent-2)"></i>Nova Soure</span>' +
+    '<span><i style="background:var(--bad)"></i>saldo negativo</span>';
+  ev.appendChild(lb); tela.appendChild(ev);
+
+  /* inadimplência */
+  const dev = DB.atrasados.filter(a => a.saldo > 0).sort((a, b) => b.saldo - a.saldo);
+  const totalDev = dev.reduce((s, a) => s + a.saldo, 0);
+  const noAr = dev.filter(a => (a.status || '').toLowerCase() === 'online');
+  tela.appendChild(cab('Inadimplência', totalDev ? moneyC(totalDev) + ' em aberto' : 'nada em aberto'));
+  const inad = el('div', 'box');
+  const ti = el('table', 'tab');
+  ti.innerHTML = '<tr><th>Devedor</th><th>Cidade</th><th>Anúncio</th><th class="r">Em aberto</th></tr>';
+  dev.slice(0, 8).forEach(a => {
+    const tr = el('tr');
+    tr.appendChild(el('td', '', a.nome));
+    tr.appendChild(el('td', '', cidadeNome(a.cidade)));
+    const td = el('td'); const on = (a.status || '').toLowerCase() === 'online';
+    td.appendChild(el('span', 'tag ' + (on ? 'on' : 'off'), on ? 'no ar' : 'pausado')); tr.appendChild(td);
+    tr.appendChild(el('td', 'r', moneyC(a.saldo)));
+    ti.appendChild(tr);
+  });
+  if (!dev.length) inad.appendChild(el('div', 'empty', 'Nenhum devedor em aberto.'));
+  else inad.appendChild(ti);
+  tela.appendChild(inad);
+  if (dev.length > 8) tela.appendChild(el('div', 'aviso', `Mostrando os 8 maiores de ${dev.length} devedores. ${noAr.length} seguem com o anúncio no ar mesmo devendo.`));
+
+  /* operação */
+  tela.appendChild(cab('Operação do mês', 'entrega e relacionamento'));
+  const totCli = R.reduce((s, r) => s + r.cs.length, 0);
+  const trocas = R.reduce((s, r) => s + r.trocas, 0);
+  const exclus = R.reduce((s, r) => s + r.exclus, 0);
+  const contatos = evsMes('contato', mesRef).length;
+  tela.appendChild(kpi([
+    ['Anúncios trocados', trocas + ' de ' + totCli, trocas ? '' : 'warn', pct(trocas, totCli) + '% da carteira'],
+    ['Exclusividades entregues', exclus, '', R.map(r => cidadeNome(r.cid).split(' ')[0] + ' ' + r.exclus).join(' · ')],
+    ['Contatos registrados', contatos, '', 'conversas anotadas no mês'],
+    ['Prospecções na fila', DB.prospects.length, '', 'contatos que ainda não fecharam']
+  ]));
+
+  tela.appendChild(el('div', 'aviso', 'Esta página é só de leitura: ela mostra o que foi lançado na página de gestão da carteira. ' +
+    'Cortesias não entram na receita nem nos percentuais de troca de anúncio.'));
+}
+
+function kpi(dados) {
+  const k = el('div', 'kpis');
+  dados.forEach(([lab, val, cls, sub]) => {
+    const d = el('div', 'kpi ' + (cls || ''));
+    d.appendChild(el('span', '', lab));
+    d.appendChild(el('b', '', String(val)));
+    if (sub) d.appendChild(el('em', '', sub));
+    k.appendChild(d);
+  });
+  return k;
+}
+function cab(titulo, sub) {
+  const b = el('div', 'blockhead'); b.appendChild(el('h2', '', titulo));
+  if (sub) b.appendChild(el('em', '', sub));
+  return b;
+}
+function linha(rot, val, cls) {
+  const l = el('div', 'lin ' + (cls || ''));
+  l.appendChild(el('span', '', rot)); l.appendChild(el('b', '', val));
+  return l;
+}
+
+carregar().then(render).catch(e => {
+  $('#tela').innerHTML = '<div class="box empty">Não consegui carregar os dados (' + e.message +
+    '). Confira se a página de gestão já gravou no Supabase.</div>';
+});
+</script>
