@@ -175,123 +175,124 @@ function render() {
 
   const tela = $('#tela'); tela.innerHTML = '';
   const R = CIDADES.map(c => resumoCidade(c, mesRef));
-  const receita = R.reduce((s, r) => s + r.receita, 0);
-  const despesa = R.reduce((s, r) => s + r.totDesp, 0);
-  const saldo = receita - despesa;
-  const socios = {};
-  R.forEach(r => (DIVISAO[r.cid] || []).forEach(([q, p]) => socios[q] = (socios[q] || 0) + r.saldo * p / 100));
 
-  /* consolidado */
-  tela.appendChild(kpi([
-    ['Receita do mês', moneyC(receita), '', R.map(r => cidadeNome(r.cid).split(' ')[0] + ' ' + moneyC(r.receita)).join(' · ')],
-    ['Despesas do mês', moneyC(despesa), '', pct(despesa, receita) + '% da receita'],
-    ['Saldo do mês', (saldo < 0 ? '−' : '') + moneyC(Math.abs(saldo)), saldo < 0 ? 'alert' : 'good',
-      'margem de ' + pct(saldo, receita) + '%'],
-    ['Divisão entre sócios', Object.entries(socios).map(([q, v]) => q + ' ' + moneyC(v)).join('  ·  '), '', '50/50 em Olindina · 75/25 em Nova Soure']
-  ]));
-
-  /* por cidade */
-  tela.appendChild(cab('Como está cada cidade', 'receitas e despesas separadas'));
-  const duas = el('div', 'duas');
+  /* ---- cada cidade, com seu próprio rateio ---- */
   R.forEach(r => {
-    const b = el('div', 'box cidade');
-    const h = el('h3', '', cidadeNome(r.cid));
-    h.appendChild(el('em', '', r.cs.length + ' clientes' + (r.cortesias ? ' · ' + r.cortesias + ' cortesias' : '')));
-    b.appendChild(h);
-    b.appendChild(linha('Mensalidades recebidas', moneyC(r.recebido)));
-    b.appendChild(linha('Recebido de atrasados', moneyC(r.atrRec)));
-    r.desp.forEach(d => b.appendChild(linha(d.nome, '− ' + moneyC(d.valor), 'desp')));
-    if (!r.desp.length) b.appendChild(linha('Sem despesas lançadas', '—', 'desp'));
-    b.appendChild(linha('Saldo', (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo)), r.saldo < 0 ? 'tot neg' : 'tot'));
+    tela.appendChild(cab(cidadeNome(r.cid), r.cs.length + ' clientes' + (r.cortesias ? ' · ' + r.cortesias + ' cortesias' : '') +
+      ' · rateio ' + (DIVISAO[r.cid] || []).map(([q, p]) => p + '% ' + q).join(' / ')));
+    tela.appendChild(kpi([
+      ['Receita do mês', moneyC(r.receita), '', 'mensalidades ' + moneyC(r.recebido) + (r.atrRec ? ' · atrasados ' + moneyC(r.atrRec) : '')],
+      ['Despesas do mês', moneyC(r.totDesp), '', r.receita ? pct(r.totDesp, r.receita) + '% da receita' : 'sem receita no mês'],
+      ['Saldo do mês', (r.saldo < 0 ? '−' : '') + moneyC(Math.abs(r.saldo)), r.saldo < 0 ? 'alert' : 'good',
+        r.receita ? 'margem de ' + pct(r.saldo, r.receita) + '%' : ''],
+      ['Recebimento da carteira', pct(r.recebido, r.contratada) + '%', pct(r.recebido, r.contratada) < 70 ? 'warn' : 'good',
+        r.pagos.length + ' de ' + r.cs.length + ' clientes · contratado ' + moneyC(r.contratada)]
+    ]));
+    const duas = el('div', 'duas');
+
+    const bd = el('div', 'box cidade');
+    bd.appendChild(el('h3', '', 'Composição do mês'));
+    bd.appendChild(linha('Mensalidades recebidas', moneyC(r.recebido)));
+    bd.appendChild(linha('Recebido de atrasados', moneyC(r.atrRec)));
+    r.desp.forEach(d => bd.appendChild(linha(d.nome, '− ' + moneyC(d.valor), 'desp')));
+    if (!r.desp.length) bd.appendChild(linha('Sem despesas lançadas', '—', 'desp'));
+    bd.appendChild(linha('Saldo', (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo)), r.saldo < 0 ? 'tot neg' : 'tot'));
+    duas.appendChild(bd);
+
+    const br2 = el('div', 'box cidade');
+    const h2 = el('h3', '', 'Rateio de ' + cidadeNome(r.cid));
+    h2.appendChild(el('em', '', mesNome(mesRef)));
+    br2.appendChild(h2);
     (DIVISAO[r.cid] || []).forEach(([q, p]) =>
-      b.appendChild(linha(`${p}% ${q}`, (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo) * p / 100), 'desp')));
-    duas.appendChild(b);
+      br2.appendChild(linha(`${q} — ${p}%`, (r.saldo < 0 ? '− ' : '') + moneyC(Math.abs(r.saldo) * p / 100),
+        r.saldo < 0 ? 'tot neg' : 'tot')));
+    const nota = el('div', 'lin desp');
+    nota.appendChild(el('span', '', r.saldo < 0
+      ? 'Prejuízo do mês, dividido na mesma proporção.'
+      : 'Calculado só sobre o resultado desta cidade.'));
+    br2.appendChild(nota);
+    const dv = r.devendo.reduce((s2, a) => s2 + a.saldo, 0);
+    br2.appendChild(linha('Em cobrança nesta cidade', moneyC(dv) + ' · ' + r.devendo.length + ' devedores', 'desp'));
+    br2.appendChild(linha('Entregas no mês', r.trocas + ' trocas · ' + r.exclus + ' exclusividades', 'desp'));
+    duas.appendChild(br2);
+    tela.appendChild(duas);
   });
-  tela.appendChild(duas);
 
-  /* recebimento da carteira */
-  tela.appendChild(cab('Recebimento da carteira', 'quanto do contratado entrou em ' + mesNome(mesRef)));
-  const rc = el('div', 'box');
-  const t = el('table', 'tab');
-  t.innerHTML = '<tr><th>Cidade</th><th class="r">Contratado</th><th class="r">Recebido</th><th class="r">Clientes pagos</th><th class="r">Ticket médio</th></tr>';
+  /* ---- evolução, uma cidade por bloco ---- */
+  const meses = []; for (let k = 5; k >= 0; k--) meses.push(somaMes(mesRef, -k));
+  tela.appendChild(cab('Evolução dos últimos 6 meses', 'saldo mês a mês, cada cidade por si'));
+  const evg = el('div', 'duas');
+  CIDADES.forEach((cid, ci) => {
+    const vals = meses.map(m => resumoCidade(cid, m).saldo);
+    const maxv = Math.max(1, ...vals.map(Math.abs));
+    const bx = el('div', 'box cidade');
+    const h = el('h3', '', cidadeNome(cid));
+    h.appendChild(el('em', '', 'melhor ' + moneyC(Math.max(...vals))));
+    bx.appendChild(h);
+    const linhaEv = el('div', 'evo'); linhaEv.style.padding = '10px 0 0';
+    meses.forEach((m, k) => {
+      const col = el('div', 'evocol');
+      const bars = el('div', 'evobars');
+      const i = el('i');
+      i.style.height = Math.max(2, Math.abs(vals[k]) / maxv * 105) + 'px';
+      i.style.width = '26px';
+      i.style.background = vals[k] < 0 ? 'var(--bad)' : (ci === 0 ? 'var(--accent)' : 'var(--accent-2)');
+      i.title = mesNome(m) + ' · ' + moneyC(vals[k]);
+      bars.appendChild(i); col.appendChild(bars);
+      col.appendChild(el('div', 'evolab', mesNome(m)));
+      linhaEv.appendChild(col);
+    });
+    bx.appendChild(linhaEv);
+    evg.appendChild(bx);
+  });
+  tela.appendChild(evg);
+
+  /* ---- inadimplência separada ---- */
+  tela.appendChild(cab('Inadimplência', 'cobranças de meses anteriores'));
+  const ing = el('div', 'duas');
+  CIDADES.forEach(cid => {
+    const dev = DB.atrasados.filter(a => a.cidade === cid && a.saldo > 0).sort((a, b) => b.saldo - a.saldo);
+    const tot = dev.reduce((s2, a) => s2 + a.saldo, 0);
+    const noAr = dev.filter(a => (a.status || '').toLowerCase() === 'online').length;
+    const bx = el('div', 'box cidade');
+    const h = el('h3', '', cidadeNome(cid));
+    h.appendChild(el('em', '', moneyC(tot) + ' · ' + dev.length + ' devedores'));
+    bx.appendChild(h);
+    if (!dev.length) bx.appendChild(el('div', 'lin desp', 'Nenhum devedor em aberto.'));
+    dev.slice(0, 6).forEach(a => {
+      const l = el('div', 'lin');
+      const on = (a.status || '').toLowerCase() === 'online';
+      const nm = el('span', '', a.nome);
+      l.appendChild(nm);
+      l.appendChild(el('span', 'tag ' + (on ? 'on' : 'off'), on ? 'no ar' : 'pausado'));
+      l.appendChild(el('b', '', moneyC(a.saldo)));
+      bx.appendChild(l);
+    });
+    if (dev.length > 6) bx.appendChild(linha(`+ ${dev.length - 6} devedores menores`, '', 'desp'));
+    bx.appendChild(linha('Ainda no ar devendo', noAr + ' de ' + dev.length, 'desp'));
+    ing.appendChild(bx);
+  });
+  tela.appendChild(ing);
+
+  /* ---- operação ---- */
+  tela.appendChild(cab('Operação do mês', 'entrega e relacionamento, por cidade'));
+  const op = el('div', 'box');
+  const to = el('table', 'tab');
+  to.innerHTML = '<tr><th>Cidade</th><th class="r">Anúncios trocados</th><th class="r">Exclusividades</th><th class="r">Contatos</th></tr>';
   R.forEach(r => {
     const tr = el('tr');
-    const c1 = el('td'); c1.appendChild(el('div', '', cidadeNome(r.cid)));
-    const bar = el('div', 'mini-bar'); const i = el('i'); i.style.width = pct(r.recebido, r.contratada) + '%';
-    bar.appendChild(i); c1.appendChild(bar); tr.appendChild(c1);
-    tr.appendChild(el('td', 'r', moneyC(r.contratada)));
-    tr.appendChild(el('td', 'r', moneyC(r.recebido) + ' (' + pct(r.recebido, r.contratada) + '%)'));
-    tr.appendChild(el('td', 'r', r.pagos.length + ' de ' + r.cs.length));
-    tr.appendChild(el('td', 'r', moneyC(r.cs.length ? r.contratada / r.cs.length : 0)));
-    t.appendChild(tr);
+    tr.appendChild(el('td', '', cidadeNome(r.cid)));
+    tr.appendChild(el('td', 'r', r.trocas + ' de ' + r.cs.length + ' (' + pct(r.trocas, r.cs.length) + '%)'));
+    tr.appendChild(el('td', 'r', String(r.exclus)));
+    tr.appendChild(el('td', 'r', String(evsMes('contato', mesRef, r.cid).length)));
+    to.appendChild(tr);
   });
-  rc.appendChild(t); tela.appendChild(rc);
+  op.appendChild(to); tela.appendChild(op);
 
-  /* evolução */
-  const meses = []; for (let k = 5; k >= 0; k--) meses.push(somaMes(mesRef, -k));
-  tela.appendChild(cab('Evolução dos últimos 6 meses', 'saldo de cada cidade'));
-  const ev = el('div', 'box');
-  const linhaEv = el('div', 'evo');
-  const vals = meses.map(m => CIDADES.map(c => resumoCidade(c, m).saldo));
-  const maxv = Math.max(1, ...vals.flat().map(Math.abs));
-  meses.forEach((m, k) => {
-    const col = el('div', 'evocol');
-    const bars = el('div', 'evobars');
-    vals[k].forEach((v, ci) => {
-      const i = el('i');
-      i.style.height = Math.max(2, Math.abs(v) / maxv * 105) + 'px';
-      i.style.background = v < 0 ? 'var(--bad)' : (ci === 0 ? 'var(--accent)' : 'var(--accent-2)');
-      i.title = cidadeNome(CIDADES[ci]) + ' · ' + mesNome(m) + ' · ' + moneyC(v);
-      bars.appendChild(i);
-    });
-    col.appendChild(bars);
-    col.appendChild(el('div', 'evolab', mesNome(m)));
-    linhaEv.appendChild(col);
-  });
-  ev.appendChild(linhaEv);
-  const lb = el('div', 'legb'); lb.style.padding = '0 16px 14px';
-  lb.innerHTML = '<span><i style="background:var(--accent)"></i>Olindina</span>' +
-    '<span><i style="background:var(--accent-2)"></i>Nova Soure</span>' +
-    '<span><i style="background:var(--bad)"></i>saldo negativo</span>';
-  ev.appendChild(lb); tela.appendChild(ev);
-
-  /* inadimplência */
-  const dev = DB.atrasados.filter(a => a.saldo > 0).sort((a, b) => b.saldo - a.saldo);
-  const totalDev = dev.reduce((s, a) => s + a.saldo, 0);
-  const noAr = dev.filter(a => (a.status || '').toLowerCase() === 'online');
-  tela.appendChild(cab('Inadimplência', totalDev ? moneyC(totalDev) + ' em aberto' : 'nada em aberto'));
-  const inad = el('div', 'box');
-  const ti = el('table', 'tab');
-  ti.innerHTML = '<tr><th>Devedor</th><th>Cidade</th><th>Anúncio</th><th class="r">Em aberto</th></tr>';
-  dev.slice(0, 8).forEach(a => {
-    const tr = el('tr');
-    tr.appendChild(el('td', '', a.nome));
-    tr.appendChild(el('td', '', cidadeNome(a.cidade)));
-    const td = el('td'); const on = (a.status || '').toLowerCase() === 'online';
-    td.appendChild(el('span', 'tag ' + (on ? 'on' : 'off'), on ? 'no ar' : 'pausado')); tr.appendChild(td);
-    tr.appendChild(el('td', 'r', moneyC(a.saldo)));
-    ti.appendChild(tr);
-  });
-  if (!dev.length) inad.appendChild(el('div', 'empty', 'Nenhum devedor em aberto.'));
-  else inad.appendChild(ti);
-  tela.appendChild(inad);
-  if (dev.length > 8) tela.appendChild(el('div', 'aviso', `Mostrando os 8 maiores de ${dev.length} devedores. ${noAr.length} seguem com o anúncio no ar mesmo devendo.`));
-
-  /* operação */
-  tela.appendChild(cab('Operação do mês', 'entrega e relacionamento'));
-  const totCli = R.reduce((s, r) => s + r.cs.length, 0);
-  const trocas = R.reduce((s, r) => s + r.trocas, 0);
-  const exclus = R.reduce((s, r) => s + r.exclus, 0);
-  const contatos = evsMes('contato', mesRef).length;
-  tela.appendChild(kpi([
-    ['Anúncios trocados', trocas + ' de ' + totCli, trocas ? '' : 'warn', pct(trocas, totCli) + '% da carteira'],
-    ['Exclusividades entregues', exclus, '', R.map(r => cidadeNome(r.cid).split(' ')[0] + ' ' + r.exclus).join(' · ')],
-    ['Contatos registrados', contatos, '', 'conversas anotadas no mês'],
-    ['Prospecções na fila', DB.prospects.length, '', 'contatos que ainda não fecharam']
-  ]));
-
-  tela.appendChild(el('div', 'aviso', 'Esta página é só de leitura: ela mostra o que foi lançado na página de gestão da carteira. ' +
-    'Cortesias não entram na receita nem nos percentuais de troca de anúncio.'));
+  tela.appendChild(el('div', 'aviso', 'Cada cidade é fechada por si: receita, despesa, saldo e rateio nunca se misturam. ' +
+    'Olindina divide 50% para cada sócio; Nova Soure divide 75% Ramon e 25% Anai. ' +
+    'Prospecção em aberto: ' + DB.prospects.length + ' contatos (lista única, sem separação por cidade). ' +
+    'Página só de leitura — mostra o que foi lançado na gestão da carteira.'));
 }
 
 function kpi(dados) {
