@@ -34,7 +34,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   border-radius:9px;white-space:nowrap}
 .tabs button.on{background:var(--accent);color:#fff}
 .tabs button em{font-style:normal;font-size:12px;margin-left:5px;opacity:.85}
-.mesref{font-size:12px;color:var(--muted);margin:0 2px 16px}
+.mesref{font-size:12px;color:var(--muted);margin:0 2px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mesnav{display:flex;align-items:center;gap:4px}
+.mesnav b{font-size:13.5px;color:var(--text);font-weight:600;min-width:130px;text-align:center}
+.mesbt{background:var(--surface);border:1px solid var(--border);color:var(--muted);width:28px;height:28px;
+  border-radius:8px;line-height:1;padding:0}
+.mesbt:hover{color:var(--text)}
+.mesbt.hoje{width:auto;padding:0 10px;font-size:12.5px;color:var(--accent)}
+.mesobs{color:var(--muted-2)}
+.linbt{margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--accent);
+  padding:6px 10px;border-radius:8px;font-size:12.5px}
 
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 13px;box-shadow:var(--shadow)}
@@ -241,7 +250,13 @@ let verCortesias = false;
 const hoje = () => new Date();
 const iso = d => d.toISOString().slice(0, 10);
 const hojeIso = iso(hoje());
-const mesAtual = hojeIso.slice(0, 7);
+const mesHoje = hojeIso.slice(0, 7);
+let mesRef = mesHoje;
+function somaMes(ref, n) {
+  let [y, m] = ref.split('-').map(Number);
+  m += n; y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1;
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
 const dParse = s => s ? new Date(s + 'T12:00:00') : null;
 const dias = (a, b) => Math.round((b - a) / 86400000);
 const desde = s => s ? dias(dParse(s), hoje()) : null;
@@ -391,10 +406,12 @@ function statusArte(c) {
   if (d <= 60) return { s: 'wait', t: `anúncio no ar há ${d} d` };
   return { s: 'off', t: `anúncio no ar há ${d} d` };
 }
-const pagoNoMes = c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesAtual);
+const pagoNoMes = c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesRef);
 function statusPag(c) {
   if (eCortesia(c) || !c.valor) return { s: '', t: eCortesia(c) ? 'cortesia — sem cobrança' : 'sem valor definido' };
-  if (pagoNoMes(c)) return { s: 'on', t: 'pago em ' + mesNome(mesAtual) };
+  if (pagoNoMes(c)) return { s: 'on', t: 'pago em ' + mesNome(mesRef) };
+  if (mesRef < mesHoje) return { s: 'off', t: 'não pagou em ' + mesNome(mesRef) };
+  if (mesRef > mesHoje) return { s: 'wait', t: 'mês ainda não começou' };
   if (!c.diaVenc) return { s: 'wait', t: 'sem dia de pagamento' };
   const d = hoje().getDate();
   if (d < c.diaVenc) return { s: 'wait', t: `vence dia ${c.diaVenc}` };
@@ -411,21 +428,21 @@ function statusContato(c) {
 const leds = c => [statusArteMes(c), statusExcMes(c), statusPag(c)];
 function statusArteMes(c) {
   const ult = c.ultAtualizacao;
-  if (ult && ult.slice(0, 7) === mesAtual) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
+  if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
   const d = desde(ult);
   if (d === null) return { s: 'off', t: 'anúncio nunca trocado' };
   return { s: d > 60 ? 'off' : 'wait', t: `sem trocar neste mês · última em ${br(ult)} (${d} d)` };
 }
 function statusExcMes(c) {
   const e = excs(c)[0];
-  if (e && e.data.slice(0, 7) === mesAtual) return { s: 'on', t: 'exclusividade em ' + br(e.data) + (e.hora ? ' às ' + e.hora : '') };
+  if (e && e.data.slice(0, 7) === mesRef) return { s: 'on', t: 'exclusividade em ' + br(e.data) + (e.hora ? ' às ' + e.hora : '') };
   if (!e) return { s: 'off', t: 'nunca teve exclusividade' };
   const d = dias(dParse(e.data), hoje());
   return { s: d > 60 ? 'off' : 'wait', t: `sem exclusividade neste mês · última em ${br(e.data)}` };
 }
 const evsDe = id => DB.eventos.filter(e => e.cli === id);
 const excs = c => evsDe(c.id).filter(e => e.tipo === 'exclusividade').sort((a, b) => b.data.localeCompare(a.data));
-const excDoMes = c => excs(c).filter(e => e.data.slice(0, 7) === mesAtual);
+const excDoMes = c => excs(c).filter(e => e.data.slice(0, 7) === mesRef);
 
 /* ---------------- WhatsApp ---------------- */
 async function garantirZap(c) {
@@ -548,11 +565,26 @@ function modal(titulo, campos, aoConfirmar, rotulo) {
 const daCidade = () => DB.clientes.filter(c => c.conta === aba && c.ativo);
 function render() {
   $('#tabatr').textContent = DB.atrasados.filter(a => a.saldo > 0).length || '';
-  $('#mesref').textContent = aba === 'PROSPECCAO'
-    ? 'Contatos que ainda não viraram cliente'
-    : aba === 'ATRASADOS'
-    ? 'Débitos de meses anteriores · recebimentos entram aqui'
-    : 'Mês de referência: ' + MESESL[+mesAtual.slice(5, 7) - 1] + ' de ' + mesAtual.slice(0, 4) + ' · só pagamentos deste mês';
+  const mr = $('#mesref'); mr.innerHTML = '';
+  if (aba === 'PROSPECCAO') mr.textContent = 'Contatos que ainda não viraram cliente';
+  else {
+    const nav = el('div', 'mesnav');
+    const ant = el('button', 'mesbt', '‹'); ant.title = 'Mês anterior';
+    ant.onclick = () => { mesRef = somaMes(mesRef, -1); render(); };
+    const prox = el('button', 'mesbt', '›'); prox.title = 'Próximo mês';
+    prox.onclick = () => { mesRef = somaMes(mesRef, 1); render(); };
+    const lab = el('b', '', MESESL[+mesRef.slice(5, 7) - 1] + ' de ' + mesRef.slice(0, 4));
+    nav.append(ant, lab, prox);
+    if (mesRef !== mesHoje) {
+      const volta = el('button', 'mesbt hoje', 'Voltar ao mês atual');
+      volta.onclick = () => { mesRef = mesHoje; render(); };
+      nav.appendChild(volta);
+    }
+    mr.appendChild(nav);
+    mr.appendChild(el('span', 'mesobs', aba === 'ATRASADOS'
+      ? 'Débitos de meses anteriores · recebimentos entram no mês em que acontecem'
+      : mesRef === mesHoje ? 'Pagamentos, trocas e exclusividades deste mês' : 'Mês fechado — só leitura do que aconteceu'));
+  }
   $('#tela').innerHTML = '';
   if (aba === 'ATRASADOS') telaAtrasados();
   else if (aba === 'PROSPECCAO') telaProspeccao();
@@ -578,7 +610,7 @@ function telaCidade() {
   const cs = todos.filter(c => !eCortesia(c));
   const cort = todos.filter(eCortesia);
   const cobraveis = cs.filter(c => c.valor > 0);
-  const recebido = DB.eventos.filter(e => e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesAtual
+  const recebido = DB.eventos.filter(e => e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesRef
     && cs.some(c => c.id === e.cli)).reduce((s, e) => s + (e.valor || 0), 0);
   const aberto = cobraveis.filter(c => !pagoNoMes(c));
 
@@ -587,7 +619,7 @@ function telaCidade() {
 
   tela.appendChild(kpis([
     ['Clientes', cs.length, ''],
-    ['Recebido em ' + mesNome(mesAtual), money(recebido), 'good'],
+    ['Recebido em ' + mesNome(mesRef), money(recebido), 'good'],
     ['Falta receber no mês', aberto.length + ' · ' + money(aberto.reduce((s, c) => s + c.valor, 0)), aberto.length ? 'alert' : 'good'],
     ['Anúncios trocados no mês', trocados.length + '/' + cs.length, trocados.length ? '' : 'warn'],
     ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
@@ -694,12 +726,25 @@ function telaCidade() {
 
   /* resultado do mês */
   const atrRec = DB.atrasados.filter(a => a.cidade === aba)
-    .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesAtual).reduce((x, r) => x + r.valor, 0), 0);
-  const desp = DB.despesas.filter(d => d.cidade === aba && d.ref === mesAtual);
+    .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesRef).reduce((x, r) => x + r.valor, 0), 0);
+  const desp = DB.despesas.filter(d => d.cidade === aba && d.ref === mesRef);
   const totDesp = desp.reduce((t, d) => t + d.valor, 0);
   const saldo = recebido + atrRec - totDesp;
   tela.appendChild(bloco('Resultado do mês', cidadeNome(aba), ['+ Despesa', novaDespesa]));
   const rb = el('div', 'box');
+  if (!desp.length) {
+    const ant = DB.despesas.filter(d => d.cidade === aba && d.ref === somaMes(mesRef, -1));
+    if (ant.length) {
+      const l = el('div', 'lin');
+      l.appendChild(el('span', '', 'Nenhuma despesa lançada em ' + mesNome(mesRef) + '.'));
+      const b = el('button', 'linbt', `Repetir as ${ant.length} de ${mesNome(somaMes(mesRef, -1))}`);
+      b.onclick = async () => {
+        ant.forEach(d => DB.despesas.push({ id: uid(), cidade: aba, ref: mesRef, nome: d.nome, valor: d.valor }));
+        await salvar(); render();
+      };
+      l.appendChild(b); rb.appendChild(l);
+    }
+  }
   rb.appendChild(linha('Recebido de mensalidades', money(recebido)));
   rb.appendChild(linha('Recebido de atrasados', money(atrRec)));
   desp.forEach(d => {
@@ -743,12 +788,12 @@ function linha(rot, val, cls) {
   return l;
 }
 function novaDespesa() {
-  modal('Despesa de ' + cidadeNome(aba) + ' em ' + mesNome(mesAtual), [
+  modal('Despesa de ' + cidadeNome(aba) + ' em ' + mesNome(mesRef), [
     { id: 'nome', rot: 'Descrição', valor: '', ph: 'Internet, contadora, manutenção...' },
     { id: 'valor', rot: 'Valor', mask: 'moeda', valor: '', ph: 'R$ 0,00' }
   ], async v => {
     if (!v.nome.trim()) { alert('Informe a descrição.'); return true; }
-    DB.despesas.push({ id: uid(), cidade: aba, ref: mesAtual, nome: v.nome.trim(), valor: desmascMoeda(v.valor) });
+    DB.despesas.push({ id: uid(), cidade: aba, ref: mesRef, nome: v.nome.trim(), valor: desmascMoeda(v.valor) });
     await salvar(); render();
   }, 'Lançar');
 }
@@ -774,7 +819,7 @@ async function marcar(id, tipo) {
   const st = tipo === 'arte' ? statusArteMes(c) : tipo === 'exclusividade' ? statusExcMes(c) : statusPag(c);
   if (st.s === 'on') {                                   // desfazer o registro do mês
     const ev = DB.eventos.filter(e => e.cli === id && e.tipo === tipo &&
-      (e.ref || e.data.slice(0, 7)) === mesAtual).sort((a, b) => b.data.localeCompare(a.data))[0];
+      (e.ref || e.data.slice(0, 7)) === mesRef).sort((a, b) => b.data.localeCompare(a.data))[0];
     if (!ev) return;
     if (!confirm(`Desfazer o registro de ${tipo === 'arte' ? 'troca de anúncio' : tipo} de ${c.empresa} em ${br(ev.data)}?`)) return;
     DB.eventos = DB.eventos.filter(e => e.id !== ev.id);
@@ -784,10 +829,10 @@ async function marcar(id, tipo) {
   const ev = { id: uid(), cli: id, tipo, data: hojeIso, nota: '' };
   if (tipo === 'pagamento') {
     modal(`Pagamento — ${c.empresa}`, [
-      { id: 'valor', rot: 'Valor recebido (ref. ' + mesNome(mesAtual) + ')', mask: 'moeda', valor: fmtMoedaEdit(c.valor) },
+      { id: 'valor', rot: 'Valor recebido (ref. ' + mesNome(mesRef) + ')', mask: 'moeda', valor: fmtMoedaEdit(c.valor) },
       { id: 'nota', rot: 'Observação (opcional)', valor: '' }
     ], async v => {
-      DB.eventos.push({ id: uid(), cli: id, tipo: 'pagamento', data: hojeIso, ref: mesAtual, valor: desmascMoeda(v.valor), nota: v.nota.trim() });
+      DB.eventos.push({ id: uid(), cli: id, tipo: 'pagamento', data: hojeIso, ref: mesRef, valor: desmascMoeda(v.valor), nota: v.nota.trim() });
       await salvar(); render(); if (abertoId === id) abrirCliente(id);
     }, 'Registrar');
     return;
@@ -801,12 +846,12 @@ function telaAtrasados() {
   const tela = $('#tela');
   const at = DB.atrasados.slice().sort((a, b) => b.saldo - a.saldo);
   const abertos = at.filter(a => a.saldo > 0);
-  const recMes = at.reduce((s, a) => s + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesAtual).reduce((x, r) => x + r.valor, 0), 0);
+  const recMes = at.reduce((s, a) => s + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesRef).reduce((x, r) => x + r.valor, 0), 0);
   const online = abertos.filter(a => (a.status || '').toLowerCase() === 'online');
   tela.appendChild(kpis([
     ['Total em aberto', money(abertos.reduce((s, a) => s + a.saldo, 0)), 'alert'],
     ['Devedores', abertos.length, ''],
-    ['Recebido em ' + mesNome(mesAtual), money(recMes), 'good'],
+    ['Recebido em ' + mesNome(mesRef), money(recMes), 'good'],
     ['Ainda no ar devendo', online.length, online.length ? 'warn' : 'good'],
     ['Sem contato há +15 dias', abertos.filter(a => { const d = desde(a.ultContato); return d === null || d > 15; }).length, 'warn'],
   ]));
@@ -818,6 +863,9 @@ function telaAtrasados() {
     fl.appendChild(b);
   });
   const nv = el('button', 'chip', '+ Novo devedor'); nv.onclick = novoAtrasado; fl.appendChild(nv);
+  const tr = el('button', 'chip', 'Trazer não pagos de ' + mesNome(somaMes(mesHoje, -1)));
+  tr.onclick = () => trazerPendencias(somaMes(mesHoje, -1));
+  fl.appendChild(tr);
   tela.appendChild(fl);
   let l = at;
   if (filtro === 'OLINDINA' || filtro === 'NOVA SOURE') l = l.filter(a => a.cidade === filtro);
@@ -882,7 +930,7 @@ function abrirCliente(id) {
       <button class="act" data-reg="arte">Troquei o anúncio</button>
       <button class="act" data-reg="exclusividade">Registrar exclusividade</button>
       <button class="act" data-reg="contato">Falei com o cliente</button>
-      ${eCortesia(c) ? '' : `<button class="act" data-reg="pagamento">Recebi ${mesNome(mesAtual)}</button>`}
+      ${eCortesia(c) ? '' : `<button class="act" data-reg="pagamento">Recebi ${mesNome(mesRef)}</button>`}
     </div>
     <div class="legend" style="margin:0">
       <span><i class="px ${a.s}"></i>${a.t}</span><span><i class="px ${p.s}"></i>${p.t}</span><span><i class="px ${f.s}"></i>${f.t}</span>
@@ -954,7 +1002,7 @@ async function registrar(id, tipo) {
 function parseData(s) {
   const m = String(s).trim().match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?$/);
   if (!m) return null;
-  let [_, d, mo, y] = m; y = y ? (y.length === 2 ? '20' + y : y) : mesAtual.slice(0, 4);
+  let [_, d, mo, y] = m; y = y ? (y.length === 2 ? '20' + y : y) : mesRef.slice(0, 4);
   const dt = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   return isNaN(new Date(dt + 'T12:00:00')) ? null : dt;
 }
@@ -1008,7 +1056,7 @@ function telaProspeccao() {
   tela.appendChild(kpis([
     ['Na lista', ps.length, ''],
     ['Sem contato registrado', ps.filter(p => !p.ultContato).length, ''],
-    ['Falados neste mês', ps.filter(p => (p.ultContato || '').slice(0, 7) === mesAtual).length, 'good'],
+    ['Falados neste mês', ps.filter(p => (p.ultContato || '').slice(0, 7) === mesRef).length, 'good'],
   ]));
   tela.appendChild(bloco('Cadastrar prospecção', 'quem eu falei ou preciso falar'));
   const cx = el('div', 'box');
@@ -1126,6 +1174,20 @@ function abrirAtrasado(id) {
     await salvar(); abrirAtrasado(id); render();
   });
 }
+function trazerPendencias(ref) {
+  const faltantes = DB.clientes.filter(c => c.ativo && c.tipo !== 'cortesia' && c.valor > 0 &&
+    !DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === ref) &&
+    !DB.atrasados.some(a => a.nome.toLowerCase() === c.empresa.toLowerCase() && a.saldo > 0));
+  if (!faltantes.length) { alert('Ninguém ficou sem pagar em ' + mesNome(ref) + ' fora quem já está na lista.'); return; }
+  const lista = faltantes.map(c => `• ${c.empresa} — ${money(c.valor)}`).join('\n');
+  if (!confirm(`Mandar para atrasados ${faltantes.length} cliente(s) sem pagamento em ${mesNome(ref)}?\n\n${lista}`)) return;
+  faltantes.forEach(c => DB.atrasados.push({
+    id: uid(), nome: c.empresa, cidade: c.conta, status: 'Online', meses: 1,
+    total: c.valor, saldo: c.valor, obs: 'não pagou ' + mesNome(ref), ultContato: c.ultContato, recebidos: []
+  }));
+  salvar().then(render);
+}
+
 function novoAtrasado() {
   modal('Novo devedor', [
     { id: 'nome', rot: 'Nome', valor: '' },
