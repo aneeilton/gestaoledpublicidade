@@ -1,0 +1,1179 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED+ Publicidade — Carteira de clientes</title>
+<style>
+:root{
+  --bg:#F4F4F2; --surface:#FFFFFF; --surface-2:#FAFAF7; --border:#E5E3DD; --line:#EDEBE6;
+  --text:#1B1B1B; --muted:#6E7280; --muted-2:#9AA0A6;
+  --accent:#1F5FBF; --ok:#15A34A; --warn:#E08A0B; --bad:#D6323C; --zap:#128C7E; --dead:#D5D3CD;
+  --radius:12px; --shadow:0 1px 2px rgba(20,20,20,.05);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#15171A; --surface:#1D2024; --surface-2:#23262B; --border:#2E3238; --line:#292D33;
+        --text:#ECEDEE; --muted:#9BA1A8; --muted-2:#787F87; --dead:#3A3F46; --shadow:none;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 14px 60px}
+h1,h2,h3{margin:0;font-weight:600}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.brand{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.brand small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+.saveflag{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.saveflag i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:block}
+.saveflag.err i{background:var(--bad)}
+
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:4px;margin-bottom:8px;box-shadow:var(--shadow);overflow-x:auto}
+.tabs button{flex:1;background:none;border:0;color:var(--muted);font-size:14px;font-weight:500;padding:8px 14px;
+  border-radius:9px;white-space:nowrap}
+.tabs button.on{background:var(--accent);color:#fff}
+.tabs button em{font-style:normal;font-size:12px;margin-left:5px;opacity:.85}
+.mesref{font-size:12px;color:var(--muted);margin:0 2px 16px}
+
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 13px;box-shadow:var(--shadow)}
+.kpi span{display:block;font-size:11.5px;color:var(--muted);line-height:1.3;min-height:30px}
+.kpi b{font-size:22px;font-weight:600;line-height:1.1;display:block;margin-top:5px;letter-spacing:-.02em}
+.kpi.alert b{color:var(--bad)} .kpi.warn b{color:var(--warn)} .kpi.good b{color:var(--ok)}
+
+.blockhead{display:flex;align-items:baseline;gap:9px;margin:22px 2px 8px;flex-wrap:wrap}
+.blockhead h2{font-size:15px}
+.blockhead em{font-style:normal;font-size:12px;color:var(--muted)}
+.blockhead button{margin-left:auto;background:none;border:0;color:var(--accent);font-size:12.5px;padding:0}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.empty{padding:14px 14px;color:var(--muted);font-size:13px}
+
+.todo{display:flex;align-items:center;gap:10px;padding:11px 14px;border:0;border-bottom:1px solid var(--line);
+  width:100%;text-align:left;color:var(--text);background:none}
+.todo:last-child{border-bottom:0}
+.todo:hover{background:var(--surface-2)}
+.todo .px{flex:none}
+.todo .who{font-weight:500;flex:none}
+.todo .what{color:var(--muted);font-size:13px;flex:1;min-width:0}
+.todo .when{font-size:12px;color:var(--muted-2);flex:none}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+input[type=text],input[type=number],select,textarea{background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:9px 11px;font-family:inherit;font-size:14px;border-radius:9px}
+input::placeholder{color:var(--muted-2)}
+.filters input[type=text]{flex:1;min-width:160px}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 13px;font-size:13px;border-radius:9px}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.rowhead,.row{display:grid;grid-template-columns:96px 1fr 110px 82px 70px 78px;gap:10px;align-items:center}
+.rowhead{padding:0 14px 6px;font-size:11.5px;color:var(--muted-2)}
+.row{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;color:var(--text);cursor:pointer}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--surface-2)}
+.leds{display:flex;gap:2px;align-items:center;margin-left:-5px}
+.pxbtn{width:28px;height:28px;border:0;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0}
+.pxbtn:hover:not(:disabled){background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--border)}
+.pxbtn:disabled{cursor:default;opacity:.55}
+.px{width:10px;height:10px;border-radius:50%;background:var(--dead)}
+.px.on{background:var(--ok)} .px.wait{background:var(--warn)} .px.off{background:var(--bad)}
+.nome{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nome small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell.r{text-align:right}
+.acoes{display:flex;gap:5px;justify-content:flex-end}
+.mini{border:1px solid var(--border);background:var(--surface);color:var(--zap);width:32px;height:30px;flex:none;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+.mini:hover{background:var(--zap);color:#fff;border-color:var(--zap)}
+.st{font-size:11.5px;border:1px solid var(--border);border-radius:20px;padding:2px 9px;color:var(--muted)}
+.st.pausado{color:var(--warn);border-color:#F0D6A2;background:#FDF6E7}
+.st.online{color:var(--ok);border-color:#BFE3CB;background:#F0F9F3}
+@media (prefers-color-scheme:dark){.st.pausado,.st.online{background:transparent}}
+
+.exc{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.exc:last-child{border-bottom:0}
+.exc time{font-size:12.5px;color:var(--accent);flex:none;width:96px}
+.exc.passada time{color:var(--muted-2)}
+.exc b{font-weight:500}
+.exc span{color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right}
+.cortesias .row{grid-template-columns:1fr 130px 90px}
+.lin{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13.5px}
+.lin:last-child{border-bottom:0}
+.lin span{color:var(--text)}
+.lin b{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums}
+.lin.desp span,.lin.desp b{color:var(--muted)}
+.lin.sub{background:var(--surface-2)}
+.lin.sub span,.lin.sub b{color:var(--muted)}
+.lin.tot{background:var(--surface-2);font-size:15px}
+.lin.tot b{font-weight:600;color:var(--ok)}
+.lin.tot.neg b{color:var(--bad)}
+.linx{background:none;border:0;color:var(--muted-2);font-size:12px;padding:0 0 0 6px}
+.linx:hover{color:var(--bad)}
+.row.prosp{grid-template-columns:1fr auto}
+.formlinha{display:flex;gap:8px;padding:14px;flex-wrap:wrap}
+.formlinha input{flex:1;min-width:150px}
+.formlinha .primary{width:auto;flex:none;padding:9px 18px}
+.mini{color:var(--muted)}
+.mini.zap{color:var(--zap)}
+.modalbg{position:fixed;inset:0;background:rgba(20,20,20,.45);z-index:60;display:flex;align-items:center;
+  justify-content:center;padding:16px}
+.modalcx{background:var(--bg);border:1px solid var(--border);border-radius:14px;width:min(400px,100%);
+  max-height:90vh;overflow-y:auto;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.modalcx h3{font-size:16px;margin-bottom:14px}
+.modalform .f{margin-bottom:10px}
+.modalform input,.modalform select,.modalform textarea{width:100%}
+.modalacts{display:flex;gap:8px;margin-top:16px}
+.modalacts .ghost{flex:1}
+.modalacts .primary{flex:1.4}
+.seg{display:flex;gap:6px}
+.segb{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:9px;font-size:13.5px}
+.segb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text);margin:4px 0 2px;cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+
+.scrim{position:fixed;inset:0;background:rgba(20,20,20,.4);display:none;z-index:40}
+.scrim.open{display:block}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);border-left:1px solid var(--border);
+  z-index:50;transform:translateX(101%);transition:transform .2s ease;overflow-y:auto}
+.sheet.open{transform:none}
+.sheet header{padding:16px 18px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}
+.sheet header h2{font-size:17px;padding-right:34px}
+.sheet header p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.sheet .body{padding:16px 18px 36px}
+.close{position:absolute;top:14px;right:16px;background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  width:30px;height:30px;border-radius:8px;line-height:1}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.act{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:11px 8px;font-size:13.5px;
+  font-weight:500;border-radius:9px;box-shadow:var(--shadow)}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act.wide{grid-column:1/-1}
+.act.zap{color:var(--zap);border-color:#BFE0D6}
+.act.zap:hover{background:var(--zap);color:#fff;border-color:var(--zap)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.f{margin-bottom:9px}
+.f input,.f select,.f textarea{width:100%}
+.hist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.hist div{display:flex;gap:9px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);align-items:baseline}
+.hist div:last-child{border-bottom:0}
+.hist time{font-size:12px;color:var(--muted-2);flex:none;width:86px}
+.hist b{font-size:12px;flex:none;width:60px;color:var(--text);font-weight:500}
+.hist s{flex:1;text-decoration:none}
+.hist button{background:none;border:0;color:var(--muted-2);padding:0 2px}
+.hist button:hover{color:var(--bad)}
+.subhead{font-size:12px;color:var(--muted);margin:20px 0 8px}
+.primary{background:var(--accent);border:1px solid var(--accent);color:#fff;padding:11px 16px;font-size:14px;font-weight:500;
+  border-radius:9px;width:100%}
+.ghost{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:9px 14px;font-size:13px;border-radius:9px}
+.ghost:hover{color:var(--text)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 2px 0;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0;background:var(--dead)}
+.foot{display:flex;gap:6px;flex-wrap:wrap;margin-top:22px;padding-top:14px;border-top:1px solid var(--border)}
+.warnbar{background:#FDF6E7;border:1px solid #F0D6A2;color:#7A5310;padding:10px 12px;font-size:13px;border-radius:9px;margin-bottom:12px}
+@media (prefers-color-scheme:dark){.warnbar{background:#2A2416;border-color:#5A4A21;color:#F0CE93}}
+.rodape{text-align:center;font-size:12px;color:var(--muted-2);margin-top:26px}
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .rowhead{display:none}
+  .row{grid-template-columns:1fr auto;row-gap:6px}
+  .row .leds{grid-column:1/-1;order:-1}
+  .row .cell.resp{display:none}
+  .cortesias .row{grid-template-columns:1fr auto}
+  .tabs button{padding:8px 10px;font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">LED<span>+</span> Publicidade<small>Carteira de clientes</small></div>
+    <div class="saveflag" id="saveflag"><i></i><span>Salvo</span></div>
+  </div>
+
+  <div id="warn"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-aba="OLINDINA" class="on">Olindina</button>
+    <button data-aba="NOVA SOURE">Nova Soure</button>
+    <button data-aba="ATRASADOS">Atrasados <em id="tabatr"></em></button>
+    <button data-aba="PROSPECCAO">Prospecção</button>
+  </div>
+  <div class="mesref" id="mesref"></div>
+
+  <div id="tela"></div>
+
+  <div class="rodape">Não se gerencia o que não se conhece.</div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" aria-hidden="true"></aside>
+
+<script>
+const SEED = {"clientes":[{"id":"c001","conta":"OLINDINA","tipo":"cortesia","empresa":"Amanda da Honda","responsavel":"Amana","telefone":"","cod":"a1","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c002","conta":"OLINDINA","tipo":"cortesia","empresa":"RR Ginchos","responsavel":"Ramon","telefone":"","cod":"a2","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c003","conta":"OLINDINA","tipo":"cortesia","empresa":"Pias Lobo","responsavel":"Ramon","telefone":"","cod":"a3","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c004","conta":"OLINDINA","tipo":"cortesia","empresa":"House Fit","responsavel":"Ramon","telefone":"","cod":"a4","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c005","conta":"OLINDINA","tipo":"cortesia","empresa":"Elite Sat","responsavel":"Adeilton","telefone":"","cod":"a5","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c006","conta":"OLINDINA","tipo":"cortesia","empresa":"Tomazia","responsavel":"Tomazia","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c007","conta":"OLINDINA","tipo":"cortesia","empresa":"Karine","responsavel":"Karine","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c008","conta":"OLINDINA","tipo":"cortesia","empresa":"Dafne","responsavel":"Dafne","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c009","conta":"OLINDINA","tipo":"cliente","empresa":"J Andrade","responsavel":"Rodrigo","telefone":"","cod":"1","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"pago mês passado a mais","ativo":true},{"id":"c010","conta":"OLINDINA","tipo":"cliente","empresa":"Odonto Matos - 15","responsavel":"Lohara","telefone":"","cod":"2","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c011","conta":"OLINDINA","tipo":"cliente","empresa":"FCK Cnfrar","responsavel":"Abner","telefone":"","cod":"3","valor":399.0,"diaVenc":2,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c012","conta":"OLINDINA","tipo":"cliente","empresa":"IOL","responsavel":"Wendell","telefone":"","cod":"4","valor":400.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c013","conta":"OLINDINA","tipo":"cliente","empresa":"Protege","responsavel":"Abel","telefone":"","cod":"5","valor":399.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c014","conta":"OLINDINA","tipo":"cliente","empresa":"Dmelo Energia Solar","responsavel":"Bob","telefone":"","cod":"6","valor":300.0,"diaVenc":5,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c015","conta":"OLINDINA","tipo":"cliente","empresa":"Empório","responsavel":"Renata","telefone":"","cod":"7","valor":199.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c016","conta":"OLINDINA","tipo":"cliente","empresa":"Posto Natuba","responsavel":"Abílio","telefone":"","cod":"8","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c017","conta":"OLINDINA","tipo":"cliente","empresa":"Gbarbosa","responsavel":"Jane","telefone":"","cod":"9","valor":299.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c018","conta":"OLINDINA","tipo":"cliente","empresa":"Hortifruti","responsavel":"Jeffinho","telefone":"","cod":"10","valor":189.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"vencimento: 10 de cada mês","ativo":true},{"id":"c019","conta":"OLINDINA","tipo":"cliente","empresa":"Agro Saty","responsavel":"Menininha","telefone":"","cod":"11","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c020","conta":"OLINDINA","tipo":"cliente","empresa":"Passos Nobre","responsavel":"Franci","telefone":"","cod":"12","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c021","conta":"OLINDINA","tipo":"cliente","empresa":"Ótica Olisan","responsavel":"Leidinalva","telefone":"","cod":"13","valor":270.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c022","conta":"OLINDINA","tipo":"cliente","empresa":"Pontual Contabilidade - 15","responsavel":"Déborah","telefone":"","cod":"14","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c023","conta":"OLINDINA","tipo":"cliente","empresa":"CR Fibra","responsavel":"Ciderlon","telefone":"","cod":"15","valor":249.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c024","conta":"OLINDINA","tipo":"cliente","empresa":"PP Pizzaria","responsavel":"Pepê","telefone":"","cod":"16","valor":239.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c025","conta":"OLINDINA","tipo":"cliente","empresa":"Drogaria Almeida","responsavel":"Júninho","telefone":"","cod":"17","valor":199.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"renovar para um ano","ativo":true},{"id":"c026","conta":"OLINDINA","tipo":"cliente","empresa":"AK Computadores","responsavel":"Antonio Carlos","telefone":"","cod":"18","valor":100.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c027","conta":"OLINDINA","tipo":"cliente","empresa":"Walas Dia dos Pais","responsavel":"","telefone":"","cod":"19","valor":35.0,"diaVenc":1,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c028","conta":"OLINDINA","tipo":"cliente","empresa":"Clinica Liv","responsavel":"Igor","telefone":"","cod":"20","valor":200.0,"diaVenc":5,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c029","conta":"OLINDINA","tipo":"cliente","empresa":"Ed Iphones","responsavel":"Bernardo","telefone":"","cod":"21","valor":189.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c030","conta":"OLINDINA","tipo":"cliente","empresa":"APLB","responsavel":"Professora Rose","telefone":"","cod":"22","valor":269.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c031","conta":"OLINDINA","tipo":"cliente","empresa":"Bahia Plano Funeraria","responsavel":"Vitu Designer","telefone":"","cod":"23","valor":269.0,"diaVenc":26,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c032","conta":"OLINDINA","tipo":"cliente","empresa":"The Iphones","responsavel":"Eduarda","telefone":"","cod":"24","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c033","conta":"OLINDINA","tipo":"cliente","empresa":"Casa da Ração","responsavel":"Irá","telefone":"","cod":"25","valor":169.0,"diaVenc":25,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c034","conta":"OLINDINA","tipo":"cliente","empresa":"Gilson Ornamentação","responsavel":"Gilson","telefone":"","cod":"26","valor":189.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c035","conta":"NOVA SOURE","tipo":"cliente","empresa":"Smobs","responsavel":"Elmaisa","telefone":"","cod":"1","valor":169.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c036","conta":"NOVA SOURE","tipo":"cliente","empresa":"Passos Nobre","responsavel":"Ju","telefone":"","cod":"2","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c037","conta":"NOVA SOURE","tipo":"cliente","empresa":"João Paulo Eventos","responsavel":"Joao Paulo","telefone":"","cod":"3","valor":289.9,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c038","conta":"NOVA SOURE","tipo":"cliente","empresa":"Cantinho","responsavel":"Elmasia","telefone":"","cod":"4","valor":189.0,"diaVenc":30,"ultAtualizacao":"2026-08-11","ultContato":null,"obs":"","ativo":true},{"id":"c039","conta":"NOVA SOURE","tipo":"cliente","empresa":"Carvalho Costruções","responsavel":"Akila","telefone":"","cod":"5","valor":200.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true},{"id":"c040","conta":"NOVA SOURE","tipo":"cliente","empresa":"Clinica Sourir","responsavel":"Karyelly","telefone":"","cod":"6","valor":189.9,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true},{"id":"c041","conta":"NOVA SOURE","tipo":"cliente","empresa":"FCK Olindina","responsavel":"Abel","telefone":"","cod":"7","valor":0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"valor na planilha: ok","ativo":true},{"id":"c042","conta":"NOVA SOURE","tipo":"cliente","empresa":"Imperio Modas","responsavel":"","telefone":"","cod":"8","valor":0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"valor na planilha: ok","ativo":true},{"id":"c043","conta":"NOVA SOURE","tipo":"cliente","empresa":"Mario e Luan","responsavel":"Mario Luan","telefone":"","cod":"9","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c044","conta":"NOVA SOURE","tipo":"cliente","empresa":"Milena Nutricionista","responsavel":"Milena / Ramon","telefone":"","cod":"10","valor":0,"diaVenc":null,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"valor na planilha: ok · vencimento **","ativo":true},{"id":"c045","conta":"NOVA SOURE","tipo":"cliente","empresa":"Moveis Valentm","responsavel":"Maisa Sena","telefone":"","cod":"11","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c046","conta":"NOVA SOURE","tipo":"cliente","empresa":"Muniz Imobiliaria","responsavel":"Maria Muniz","telefone":"","cod":"12","valor":299.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"1 mês quer...","ativo":true},{"id":"c047","conta":"NOVA SOURE","tipo":"cliente","empresa":"NYL Modas","responsavel":"Gledson","telefone":"","cod":"13","valor":189.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true},{"id":"c048","conta":"NOVA SOURE","tipo":"cliente","empresa":"Otica da Fabrica","responsavel":"Pedro","telefone":"","cod":"14","valor":169.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c049","conta":"NOVA SOURE","tipo":"cliente","empresa":"Peça Rara Boutique","responsavel":"Amanda","telefone":"","cod":"15","valor":259.0,"diaVenc":30,"ultAtualizacao":"2026-08-12","ultContato":null,"obs":"","ativo":true},{"id":"c050","conta":"NOVA SOURE","tipo":"cliente","empresa":"Prefs","responsavel":"","telefone":"","cod":"16","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c051","conta":"NOVA SOURE","tipo":"cliente","empresa":"VN Lubrificantes","responsavel":"Jose Souza","telefone":"","cod":"17","valor":0,"diaVenc":30,"ultAtualizacao":"2026-08-01","ultContato":null,"obs":"valor na planilha: ok","ativo":true},{"id":"c052","conta":"NOVA SOURE","tipo":"cliente","empresa":"Studio Aila","responsavel":"Aila","telefone":"","cod":"18","valor":0,"diaVenc":30,"ultAtualizacao":"2026-08-11","ultContato":null,"obs":"","ativo":true},{"id":"c053","conta":"NOVA SOURE","tipo":"cliente","empresa":"Dmelo","responsavel":"Bob","telefone":"","cod":"19","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c054","conta":"NOVA SOURE","tipo":"cliente","empresa":"Clinica Plena","responsavel":"Iago / Poliana / Felipe","telefone":"","cod":"20","valor":269.9,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c055","conta":"NOVA SOURE","tipo":"cliente","empresa":"ID Odontologia","responsavel":"Deysi Lucas","telefone":"","cod":"21","valor":229.0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true},{"id":"c056","conta":"NOVA SOURE","tipo":"cliente","empresa":"Posto e Restaurante Natuba","responsavel":"Claudemir Rosa","telefone":"","cod":"22","valor":250.0,"diaVenc":null,"ultAtualizacao":"2026-08-08","ultContato":null,"obs":"","ativo":true},{"id":"c057","conta":"NOVA SOURE","tipo":"cliente","empresa":"Super Macedo","responsavel":"Ana Heloiza","telefone":"","cod":"23","valor":249.9,"diaVenc":null,"ultAtualizacao":"2026-08-08","ultContato":null,"obs":"","ativo":true}],"eventos":[{"cli":"c009","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":0.0,"nota":"importado da planilha (sem valor lançado)"},{"cli":"c010","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":1614.0,"nota":"importado da planilha"},{"cli":"c011","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":400.0,"nota":"importado da planilha"},{"cli":"c012","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":400.0,"nota":"importado da planilha"},{"cli":"c013","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":399.0,"nota":"importado da planilha"},{"cli":"c014","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":300.0,"nota":"importado da planilha"},{"cli":"c015","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":296.0,"nota":"importado da planilha"},{"cli":"c016","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":290.0,"nota":"importado da planilha"},{"cli":"c017","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c018","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c019","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c020","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c021","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":270.0,"nota":"importado da planilha"},{"cli":"c022","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":269.0,"nota":"importado da planilha"},{"cli":"c023","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":249.0,"nota":"importado da planilha"},{"cli":"c024","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":239.0,"nota":"importado da planilha"},{"cli":"c025","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":199.0,"nota":"importado da planilha"},{"cli":"c026","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":100.0,"nota":"importado da planilha"},{"cli":"c027","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":35.0,"nota":"importado da planilha"},{"cli":"c035","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":169.0,"nota":"importado da planilha"},{"cli":"c036","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c037","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c037","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":290.0,"nota":"importado da planilha"},{"cli":"c038","tipo":"arte","data":"2026-08-11","nota":"importado da planilha"},{"cli":"c039","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c040","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c041","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c042","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c043","tipo":"exclusividade","data":"2026-08-11","hora":"","nota":"importado da planilha"},{"cli":"c044","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c045","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c046","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c046","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c047","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c048","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c049","tipo":"arte","data":"2026-08-12","nota":"importado da planilha"},{"cli":"c050","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c051","tipo":"arte","data":"2026-08-01","nota":"importado da planilha"},{"cli":"c052","tipo":"arte","data":"2026-08-11","nota":"importado da planilha"},{"cli":"c052","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c056","tipo":"arte","data":"2026-08-08","nota":"importado da planilha"},{"cli":"c057","tipo":"arte","data":"2026-08-08","nota":"importado da planilha"},{"cli":"c057","tipo":"exclusividade","data":"2026-06-09","hora":"","nota":"importado da planilha"}],"atrasados":[{"id":"a00","nome":"Pracont Teodomiro","cidade":"OLINDINA","status":"Online","meses":5,"total":1734.0,"saldo":1734.0,"obs":"Disse que ta se organizando pra pagar, pediu pra esperar um pouco mais. | toda semana diz ta conseguindo o dinheiro","ultContato":null,"recebidos":[]},{"id":"a01","nome":"Ateliê da Gil - Gilmara","cidade":"OLINDINA","status":"Pausado","meses":5,"total":945.0,"saldo":445.0,"obs":"Deu 500,00 em 17/08. Vai passar cartao | vai passar cartao","ultContato":"2026-08-10","recebidos":[{"id":"ra01","data":"2026-08-10","valor":500.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a02","nome":"Lirio dos Vales - 269","cidade":"OLINDINA","status":"Online","meses":3,"total":1345.0,"saldo":1345.0,"obs":"Rachel ficou de falar com o pastor, dá resposta ate Sexta feira 31/07 | abatendo Ramon","ultContato":null,"recebidos":[]},{"id":"a03","nome":"Agro Fontes","cidade":"OLINDINA","status":"Pausado","meses":1,"total":1156.0,"saldo":866.0,"obs":"Pediu pra esperar um pouco, teve imprevisto. | pediu pra esperar","ultContato":null,"recebidos":[]},{"id":"a04","nome":"APLB","cidade":"OLINDINA","status":"Pausado","meses":null,"total":1156.0,"saldo":356.0,"obs":"Sempre paga de 3 em 3 meses - em dias. | falta metado do que devia","ultContato":null,"recebidos":[]},{"id":"a05","nome":"JK Acougue - Kaio","cidade":"OLINDINA","status":"Online","meses":6,"total":1000.0,"saldo":1000.0,"obs":"Pagou 400,00 Julho. Vai pagar metade em 20/08 | está resolvendo pra pagar","ultContato":null,"recebidos":[]},{"id":"a06","nome":"Criativa - Abner","cidade":"OLINDINA","status":"Online","meses":0,"total":385.0,"saldo":0.0,"obs":"Falta 1x de 385 | não deu resposta","ultContato":"2026-08-10","recebidos":[{"id":"ra06","data":"2026-08-10","valor":385.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a07","nome":"Jakeline Cabelereira","cidade":"OLINDINA","status":"Pausado","meses":4,"total":756.0,"saldo":756.0,"obs":"Vai dar metade dia 10/08 e restante parcelado | sem resposta","ultContato":null,"recebidos":[]},{"id":"a08","nome":"Vandinho Turismo","cidade":"OLINDINA","status":"Online","meses":3,"total":656.0,"saldo":656.0,"obs":"Pediu pra esperar pra 10/08 | Pediu pra pausar, atpe conseguir pagar.","ultContato":null,"recebidos":[]},{"id":"a09","nome":"DRª Josilda Franco","cidade":"OLINDINA","status":"Pausado","meses":5,"total":645.0,"saldo":645.0,"obs":"Pagou uma parte em Abril, | Cobrei esperando","ultContato":null,"recebidos":[]},{"id":"a10","nome":"House Burguer Renata","cidade":"OLINDINA","status":"Pausado","meses":4,"total":378.0,"saldo":178.0,"obs":"Deu 200,00 Agosto. | sem resposta","ultContato":"2026-08-10","recebidos":[{"id":"ra10","data":"2026-08-10","valor":200.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a11","nome":"Construaço - Elmo Serralheria","cidade":"OLINDINA","status":"Online","meses":2,"total":578.0,"saldo":578.0,"obs":"Não atende, | sem resposta","ultContato":null,"recebidos":[]},{"id":"a12","nome":"Ademir Barbearia","cidade":"OLINDINA","status":"Online","meses":2,"total":378.0,"saldo":378.0,"obs":"Esperar até dia 31/07 | pagando","ultContato":null,"recebidos":[]},{"id":"a13","nome":"Kaique de Jairinho","cidade":"OLINDINA","status":"Online","meses":1,"total":299.0,"saldo":299.0,"obs":"Sempre dando uma data sem cumprir | aguardando","ultContato":null,"recebidos":[]},{"id":"a14","nome":"Energia Solar Prime - Cristiano","cidade":"OLINDINA","status":"Online","meses":1,"total":289.0,"saldo":289.0,"obs":"Perdido | aguardando","ultContato":null,"recebidos":[]},{"id":"a15","nome":"Soure - Clinica Plena","cidade":"NOVA SOURE","status":"Online","meses":null,"total":1889.0,"saldo":1889.0,"obs":"Está fora do país, resolve quando chegar","ultContato":null,"recebidos":[]}],"despesas":[{"id":"d001","cidade":"OLINDINA","ref":"2026-08","nome":"Designers","valor":270.0},{"id":"d002","cidade":"OLINDINA","ref":"2026-08","nome":"Manutenção - T","valor":300.0},{"id":"d003","cidade":"OLINDINA","ref":"2026-08","nome":"Internet + Celular","valor":385.0},{"id":"d004","cidade":"OLINDINA","ref":"2026-08","nome":"Apps mensal","valor":115.0},{"id":"d005","cidade":"OLINDINA","ref":"2026-08","nome":"Contadora Débora","valor":125.0},{"id":"d006","cidade":"OLINDINA","ref":"2026-08","nome":"DAS","valor":96.3},{"id":"d007","cidade":"OLINDINA","ref":"2026-08","nome":"Manutenção Leo","valor":300.0},{"id":"d008","cidade":"OLINDINA","ref":"2026-08","nome":"J Andrade","valor":409.17},{"id":"d009","cidade":"NOVA SOURE","ref":"2026-08","nome":"Designers","valor":305.0},{"id":"d010","cidade":"NOVA SOURE","ref":"2026-08","nome":"Internet 7 linhas","valor":419.3},{"id":"d011","cidade":"NOVA SOURE","ref":"2026-08","nome":"Contadora","valor":125.0},{"id":"d012","cidade":"NOVA SOURE","ref":"2026-08","nome":"Apps mensal","valor":115.0},{"id":"d013","cidade":"NOVA SOURE","ref":"2026-08","nome":"Manutenção","valor":300.0}]};
+</script>
+<script>
+/* ===== CONFIGURAÇÃO DO SUPABASE =====================================
+   Deixe as duas linhas vazias para a página funcionar sozinha (modo local).
+   Preenchendo as duas, a página passa a ler e gravar no Supabase e pode
+   rodar na Vercel, com os mesmos dados em qualquer aparelho.
+   Tabela esperada (rode no SQL Editor do Supabase):
+     create table led_estado (id int primary key, dados jsonb, atualizado_em timestamptz default now());
+     insert into led_estado (id, dados) values (1, '{}'::jsonb);
+     alter table led_estado enable row level security;
+     create policy "acesso total" on led_estado for all using (true) with check (true);
+   ==================================================================== */
+const SUPABASE_URL = 'https://oxqrrebomtdzecxsfpip.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1sohqR4OnESmTng3VL727w_Prvp8Zj4';
+const usaSupabase = () => !!(SUPABASE_URL && SUPABASE_KEY);
+
+const KEY = 'ledplus:carteira:v3';
+const DIVISAO = { 'OLINDINA': [['Ramon', 50], ['Anai', 50]], 'NOVA SOURE': [['Ramon', 75], ['Anai', 25]] };
+const $ = s => document.querySelector(s);
+const el = (t, c, txt) => { const n = document.createElement(t); if (c) n.className = c; if (txt != null) n.textContent = txt; return n; };
+const esc = s => (s == null ? '' : String(s)).replace(/[<>&"]/g, m => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[m]));
+
+let DB = { clientes: [], eventos: [], atrasados: [] };
+let memoriaSomente = false;
+let aba = 'OLINDINA', filtro = null, busca = '', abertoId = null;
+let verCortesias = false;
+
+const hoje = () => new Date();
+const iso = d => d.toISOString().slice(0, 10);
+const hojeIso = iso(hoje());
+const mesAtual = hojeIso.slice(0, 7);
+const dParse = s => s ? new Date(s + 'T12:00:00') : null;
+const dias = (a, b) => Math.round((b - a) / 86400000);
+const desde = s => s ? dias(dParse(s), hoje()) : null;
+const br = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '—';
+const money = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const uid = () => 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MESESL = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const mesNome = ref => MESES[+ref.slice(5, 7) - 1] + '/' + ref.slice(2, 4);
+const cidadeNome = c => c === 'NOVA SOURE' ? 'Nova Soure' : 'Olindina';
+
+/* nomes no mesmo padrão: Primeira maiúscula, resto minúsculo, siglas preservadas */
+const MINUSC = new Set(['da', 'de', 'do', 'das', 'dos', 'e', 'di', 'du', 'em', 'no', 'na', 'a', 'o']);
+const SIGLAS = new Set(['APLB', 'CEAP', 'SEBRAE']);   // siglas com vogal que devem ficar em caixa alta
+const capitaliza = w => w.toLowerCase().replace(/[a-zà-ÿ]/, ch => ch.toUpperCase());
+function padroniza(nome) {
+  return String(nome || '').trim().replace(/\s+/g, ' ').split(' ').map((p, i) => {
+    const l = p.toLowerCase();
+    if (i > 0 && MINUSC.has(l)) return l;                       // da, de, do...
+    const letras = p.replace(/[^A-Za-zÀ-ÿ]/g, '');
+    const caixaAlta = letras.length > 1 && letras === letras.toUpperCase();
+    const semVogal = !/[AEIOUÀ-Ý]/.test(letras);
+    if (caixaAlta && (semVogal || SIGLAS.has(letras) || (i === 0 && letras.length <= 3))) return p.toUpperCase();  // siglas
+    return capitaliza(p);
+  }).join(' ');
+}
+/* máscaras de telefone e dinheiro */
+function mascTel(v) {
+  const d = String(v || '').replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 10) return d.slice(0, 2) + ' ' + d.slice(2);
+  return d.slice(0, 2) + ' ' + d.slice(2, 3) + ' ' + d.slice(3);
+}
+function mascMoeda(v) {
+  const d = String(v || '').replace(/\D/g, '');
+  if (!d) return '';
+  return 'R$ ' + (parseInt(d, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+const desmascMoeda = v => {
+  const d = String(v || '').replace(/\D/g, '');
+  return d ? parseInt(d, 10) / 100 : 0;
+};
+const fmtMoedaEdit = n => n ? mascMoeda(String(Math.round(n * 100))) : '';
+function ligaMascaras(raiz) {
+  raiz.querySelectorAll('[data-mask=tel]').forEach(i => {
+    i.type = 'tel'; i.inputMode = 'tel'; i.value = mascTel(i.value);
+    i.oninput = () => { i.value = mascTel(i.value); };
+  });
+  raiz.querySelectorAll('[data-mask=moeda]').forEach(i => {
+    i.inputMode = 'numeric';
+    i.oninput = () => { i.value = mascMoeda(i.value); };
+  });
+  raiz.querySelectorAll('[data-mask=num]').forEach(i => { i.inputMode = 'numeric'; });
+}
+
+/* telefone -> formato do WhatsApp */
+function zapNum(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (d.length <= 11) d = '55' + d;
+  return d.length >= 12 ? d : null;
+}
+
+/* ---------------- armazenamento ---------------- */
+function flag(ok, texto) {
+  const f = $('#saveflag'); f.classList.toggle('err', !ok); f.querySelector('span').textContent = texto;
+}
+async function carregar() {
+  if (usaSupabase()) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?id=eq.1&select=dados`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+      if (!r.ok) throw new Error(r.status + (r.status === 404 ? ' — tabela led_estado não encontrada' : r.status === 401 ? ' — chave recusada' : ''));
+      const j = await r.json();
+      if (j && j[0] && j[0].dados && j[0].dados.clientes) { DB = j[0].dados; normalizar(); return; }
+      DB = semear(); normalizar(); await salvar(); return;   // primeira carga: sobe a base para o banco
+    } catch (e) {
+      memoriaSomente = true; flag(false, 'Sem conexão');
+      $('#warn').innerHTML = '<div class="warnbar">Não consegui falar com o Supabase (' + esc(e.message) +
+        '). A página está rodando com a base local e nada será salvo. Confira a URL, a chave e se a tabela led_estado existe.</div>';
+      DB = semear(); normalizar(); return;
+    }
+  }
+  try {
+    const r = await window.storage.get(KEY);
+    if (r && r.value) { DB = JSON.parse(r.value); normalizar(); return; }
+  } catch (e) { }
+  DB = semear(); normalizar(); await salvar();
+}
+function normalizar() {
+  DB.atrasados = DB.atrasados || []; DB.eventos = DB.eventos || []; DB.despesas = DB.despesas || []; DB.prospects = DB.prospects || [];
+  DB.clientes.forEach(c => {
+    if (c.conta === 'ANAI') c.conta = 'OLINDINA';
+    if (c.conta === 'LED') c.conta = 'NOVA SOURE';
+    if (c.plano) { c.tipo = c.plano === 'CORTESIA' ? 'cortesia' : 'cliente'; delete c.plano; }
+    if (!c.tipo) c.tipo = 'cliente';
+    c.empresa = padroniza(c.empresa);
+    c.responsavel = padroniza(c.responsavel);
+    delete c.segmento;
+  });
+  DB.atrasados.forEach(a => { a.nome = padroniza(a.nome); a.recebidos = a.recebidos || []; });
+}
+async function salvar() {
+  if (memoriaSomente) { flag(false, 'Só nesta sessão'); return; }
+  if (usaSupabase()) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?id=eq.1`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dados: DB, atualizado_em: new Date().toISOString() })
+      });
+      if (!r.ok) throw new Error(r.status);
+      flag(true, 'Salvo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    } catch (e) {
+      flag(false, 'Falha ao salvar');
+      $('#warn').innerHTML = '<div class="warnbar">O Supabase recusou a gravação (' + esc(String(e.message)) +
+        '). Verifique a política de acesso da tabela led_estado.</div>';
+    }
+    return;
+  }
+  try {
+    const r = await window.storage.set(KEY, JSON.stringify(DB));
+    if (!r) throw new Error('sem retorno');
+    flag(true, 'Salvo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+  } catch (e) {
+    memoriaSomente = true; flag(false, 'Não salvo');
+    $('#warn').innerHTML = '<div class="warnbar">Não consegui gravar neste ambiente. As alterações valem só até fechar a página — baixe o backup em JSON antes de sair.</div>';
+  }
+}
+function semear() {
+  return {
+    clientes: SEED.clientes.map(c => Object.assign({}, c)),
+    eventos: SEED.eventos.map(e => Object.assign({ id: uid() }, e)),
+    atrasados: SEED.atrasados.map(a => Object.assign({}, a, { recebidos: (a.recebidos || []).slice() })),
+    despesas: SEED.despesas.map(d => Object.assign({}, d)),
+    prospects: []
+  };
+}
+
+/* ---------------- status ---------------- */
+const eCortesia = c => c.tipo === 'cortesia';
+function statusArte(c) {
+  if (eCortesia(c)) return { s: '', t: 'cortesia — sem compromisso de atualizar' };
+  const d = desde(c.ultAtualizacao);
+  if (d === null) return { s: '', t: 'anúncio sem registro de troca' };
+  if (d <= 30) return { s: 'on', t: `anúncio trocado há ${d} d` };
+  if (d <= 60) return { s: 'wait', t: `anúncio no ar há ${d} d` };
+  return { s: 'off', t: `anúncio no ar há ${d} d` };
+}
+const pagoNoMes = c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesAtual);
+function statusPag(c) {
+  if (eCortesia(c) || !c.valor) return { s: '', t: eCortesia(c) ? 'cortesia — sem cobrança' : 'sem valor definido' };
+  if (pagoNoMes(c)) return { s: 'on', t: 'pago em ' + mesNome(mesAtual) };
+  if (!c.diaVenc) return { s: 'wait', t: 'sem dia de pagamento' };
+  const d = hoje().getDate();
+  if (d < c.diaVenc) return { s: 'wait', t: `vence dia ${c.diaVenc}` };
+  if (d === c.diaVenc) return { s: 'wait', t: 'vence hoje' };
+  return { s: 'off', t: `${d - c.diaVenc} d de atraso` };
+}
+function statusContato(c) {
+  const d = desde(c.ultContato);
+  if (d === null) return { s: '', t: 'sem contato registrado' };
+  if (d <= 30) return { s: 'on', t: `falou há ${d} d` };
+  if (d <= 60) return { s: 'wait', t: `sem falar há ${d} d` };
+  return { s: 'off', t: `sem falar há ${d} d` };
+}
+const leds = c => [statusArteMes(c), statusExcMes(c), statusPag(c)];
+function statusArteMes(c) {
+  const ult = c.ultAtualizacao;
+  if (ult && ult.slice(0, 7) === mesAtual) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
+  const d = desde(ult);
+  if (d === null) return { s: 'off', t: 'anúncio nunca trocado' };
+  return { s: d > 60 ? 'off' : 'wait', t: `sem trocar neste mês · última em ${br(ult)} (${d} d)` };
+}
+function statusExcMes(c) {
+  const e = excs(c)[0];
+  if (e && e.data.slice(0, 7) === mesAtual) return { s: 'on', t: 'exclusividade em ' + br(e.data) + (e.hora ? ' às ' + e.hora : '') };
+  if (!e) return { s: 'off', t: 'nunca teve exclusividade' };
+  const d = dias(dParse(e.data), hoje());
+  return { s: d > 60 ? 'off' : 'wait', t: `sem exclusividade neste mês · última em ${br(e.data)}` };
+}
+const evsDe = id => DB.eventos.filter(e => e.cli === id);
+const excs = c => evsDe(c.id).filter(e => e.tipo === 'exclusividade').sort((a, b) => b.data.localeCompare(a.data));
+const excDoMes = c => excs(c).filter(e => e.data.slice(0, 7) === mesAtual);
+
+/* ---------------- WhatsApp ---------------- */
+async function garantirZap(c) {
+  let num = zapNum(c.telefone);
+  if (num) return num;
+  return new Promise(res => {
+    modal(`WhatsApp de ${c.empresa}`, [{ id: 'tel', rot: 'Número com DDD', mask: 'tel', ph: '75 9 99998855', valor: '' }],
+      async v => {
+        const n = zapNum(v.tel);
+        if (!n) { alert('Número inválido. Use DDD + número.'); return true; }
+        c.telefone = mascTel(v.tel); await salvar(); render(); res(n);
+      }, 'Salvar');
+  });
+}
+function msgExclusividade(c, quando, ini, fim) {
+  return `Oi, *${primeiroNome(c)}*!\n` +
+    `Estamos passando para informar que *${quando}*, vamos pausar os outros anúncios para dar exclusividade apenas ao seu *${c.empresa}!*\n` +
+    `Das *${ini} às ${fim}*\n` +
+    `Led+ Publicidade. 🚀`;
+}
+function abrirExclusividade(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  const amanha = iso(new Date(Date.now() + 864e5));
+  const campos = [
+    { id: 'dia', tipo: 'opcoes', rot: 'Dia', valor: 'hoje', opcoes: [['hoje', 'Hoje'], ['amanha', 'Amanhã']] },
+    { id: 'ini', tipo: 'hora', rot: 'Começa às', valor: '08:00' },
+    { id: 'fim', tipo: 'hora', rot: 'Termina às', valor: '18:00' },
+    { id: 'zap', tipo: 'check', rot: 'Avisar o cliente pelo WhatsApp', valor: true }
+  ];
+  modal(`Exclusividade — ${c.empresa}`, campos, async v => {
+    if (!v.ini || !v.fim) { alert('Informe o horário de início e fim.'); return true; }
+    const data = v.dia === 'hoje' ? hojeIso : amanha;
+    DB.eventos.push({
+      id: uid(), cli: id, tipo: 'exclusividade', data, hora: v.ini + '–' + v.fim,
+      nota: v.zap ? 'cliente avisado no WhatsApp' : ''
+    });
+    await salvar(); render(); if (abertoId === id) abrirCliente(id);
+    if (v.zap) {
+      const num = await garantirZap(c);
+      if (num) window.open(`https://wa.me/${num}?text=${encodeURIComponent(msgExclusividade(c, v.dia === 'hoje' ? 'hoje' : 'amanhã', v.ini, v.fim))}`, '_blank');
+    }
+  }, 'Registrar');
+}
+async function abrirConvite(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  const num = await garantirZap(c);
+  if (!num) return;
+  const d = desde(c.ultAtualizacao);
+  const tempo = d === null ? 'já faz um tempo que o seu anúncio não muda' : `o seu anúncio está no ar sem alteração há ${d} dias`;
+  const msg = `Oi, *${primeiroNome(c)}*!\n` +
+    `Passando para avisar que ${tempo}. Quer aproveitar para divulgar uma promoção ou novidade no painel?\n` +
+    `É só mandar as informações e as fotos que a gente monta a nova arte.\n` +
+    `Led+ Publicidade. 🚀`;
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+const primeiroNome = c => (c.responsavel || c.empresa).split(' ')[0];
+
+/* ---------------- modal ---------------- */
+function modal(titulo, campos, aoConfirmar, rotulo) {
+  const fundo = el('div', 'modalbg');
+  const cx = el('div', 'modalcx');
+  cx.appendChild(el('h3', '', titulo));
+  const form = el('div', 'modalform');
+  campos.forEach(c => {
+    if (c.tipo === 'opcoes') {
+      const f = el('div', 'f');
+      f.appendChild(el('label', '', c.rot));
+      const seg = el('div', 'seg');
+      c.opcoes.forEach(([v, t]) => {
+        const b = el('button', 'segb' + (v === c.valor ? ' on' : ''), t);
+        b.onclick = () => { c.valor = v; [...seg.children].forEach(x => x.classList.toggle('on', x === b)); };
+        seg.appendChild(b);
+      });
+      f.appendChild(seg); form.appendChild(f); c._get = () => c.valor;
+      return;
+    }
+    if (c.tipo === 'check') {
+      const f = el('label', 'chk');
+      const i = el('input'); i.type = 'checkbox'; i.checked = c.valor !== false;
+      f.append(i, el('span', '', c.rot)); form.appendChild(f); c._get = () => i.checked;
+      return;
+    }
+    const f = el('div', 'f');
+    f.appendChild(el('label', '', c.rot));
+    let i;
+    if (c.tipo === 'select') {
+      i = el('select');
+      c.opcoes.forEach(([v, t]) => { const o = el('option', '', t); o.value = v; if (v === c.valor) o.selected = true; i.appendChild(o); });
+    } else if (c.tipo === 'textarea') {
+      i = el('textarea'); i.rows = 2; i.value = c.valor || '';
+    } else {
+      i = el('input'); i.type = c.tipo === 'hora' ? 'time' : 'text';
+      i.value = c.valor || ''; if (c.ph) i.placeholder = c.ph;
+      if (c.mask) i.setAttribute('data-mask', c.mask);
+    }
+    f.appendChild(i); form.appendChild(f);
+    c._get = () => i.value;
+    c._el = i;
+  });
+  cx.appendChild(form);
+  const acoes = el('div', 'modalacts');
+  const cancelar = el('button', 'ghost', 'Cancelar');
+  const ok = el('button', 'primary', rotulo || 'Confirmar');
+  cancelar.onclick = () => fundo.remove();
+  ok.onclick = async () => {
+    const vals = {}; campos.forEach(c => vals[c.id] = c._get());
+    const erro = await aoConfirmar(vals);
+    if (!erro) fundo.remove();
+  };
+  acoes.append(cancelar, ok); cx.appendChild(acoes);
+  fundo.appendChild(cx);
+  fundo.onclick = e => { if (e.target === fundo) fundo.remove(); };
+  document.body.appendChild(fundo);
+  ligaMascaras(cx);
+  const p = cx.querySelector('input:not([type=checkbox]),textarea,select'); if (p) p.focus();
+  return fundo;
+}
+
+/* ---------------- render ---------------- */
+const daCidade = () => DB.clientes.filter(c => c.conta === aba && c.ativo);
+function render() {
+  $('#tabatr').textContent = DB.atrasados.filter(a => a.saldo > 0).length || '';
+  $('#mesref').textContent = aba === 'PROSPECCAO'
+    ? 'Contatos que ainda não viraram cliente'
+    : aba === 'ATRASADOS'
+    ? 'Débitos de meses anteriores · recebimentos entram aqui'
+    : 'Mês de referência: ' + MESESL[+mesAtual.slice(5, 7) - 1] + ' de ' + mesAtual.slice(0, 4) + ' · só pagamentos deste mês';
+  $('#tela').innerHTML = '';
+  if (aba === 'ATRASADOS') telaAtrasados();
+  else if (aba === 'PROSPECCAO') telaProspeccao();
+  else telaCidade();
+}
+function bloco(titulo, sub, acao) {
+  const b = el('div', 'blockhead'); b.appendChild(el('h2', '', titulo));
+  if (sub) b.appendChild(el('em', '', sub));
+  if (acao) { const bt = el('button', '', acao[0]); bt.onclick = acao[1]; b.appendChild(bt); }
+  return b;
+}
+function kpis(data) {
+  const k = el('div', 'kpis');
+  data.forEach(([lab, val, cls]) => {
+    const d = el('div', 'kpi ' + cls); d.appendChild(el('span', '', lab)); d.appendChild(el('b', '', String(val))); k.appendChild(d);
+  });
+  return k;
+}
+
+function telaCidade() {
+  const tela = $('#tela');
+  const todos = daCidade();
+  const cs = todos.filter(c => !eCortesia(c));
+  const cort = todos.filter(eCortesia);
+  const cobraveis = cs.filter(c => c.valor > 0);
+  const recebido = DB.eventos.filter(e => e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesAtual
+    && cs.some(c => c.id === e.cli)).reduce((s, e) => s + (e.valor || 0), 0);
+  const aberto = cobraveis.filter(c => !pagoNoMes(c));
+
+  const trocados = cs.filter(c => statusArteMes(c).s === 'on');
+  const comExc = cs.filter(c => statusExcMes(c).s === 'on');
+
+  tela.appendChild(kpis([
+    ['Clientes', cs.length, ''],
+    ['Recebido em ' + mesNome(mesAtual), money(recebido), 'good'],
+    ['Falta receber no mês', aberto.length + ' · ' + money(aberto.reduce((s, c) => s + c.valor, 0)), aberto.length ? 'alert' : 'good'],
+    ['Anúncios trocados no mês', trocados.length + '/' + cs.length, trocados.length ? '' : 'warn'],
+    ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
+  ]));
+
+  /* cobranças e contato */
+  const itens = [];
+  cs.forEach(c => {
+    const p = statusPag(c);
+    if (p.s === 'off') itens.push({ c, p: 1, s: 'off', txt: `${money(c.valor)} — ${p.t}` });
+    else if (p.s === 'wait' && c.diaVenc && c.diaVenc - hoje().getDate() <= 3) itens.push({ c, p: 2, s: 'wait', txt: 'pagamento ' + p.t });
+  });
+  itens.sort((x, y) => x.p - y.p || x.c.empresa.localeCompare(y.c.empresa));
+  tela.appendChild(bloco('Pagamentos a receber', itens.length ? itens.length + ' pendências' : ''));
+  const box = el('div', 'box');
+  if (!itens.length) box.appendChild(el('div', 'empty', 'Nada pendente hoje.'));
+  itens.slice(0, 10).forEach(i => {
+    const b = el('button', 'todo');
+    b.appendChild(el('div', 'px ' + i.s));
+    b.appendChild(el('div', 'who', i.c.empresa));
+    b.appendChild(el('div', 'what', i.txt));
+    b.appendChild(el('div', 'when', i.c.responsavel || ''));
+    b.onclick = () => abrirCliente(i.c.id);
+    box.appendChild(b);
+  });
+  if (itens.length > 10) box.appendChild(el('div', 'empty', `+ ${itens.length - 10} na lista abaixo`));
+  tela.appendChild(box);
+
+  /* lista */
+  tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba)));
+  const fl = el('div', 'filters');
+  const inp = el('input'); inp.type = 'text'; inp.id = 'busca'; inp.placeholder = 'Buscar empresa, responsável ou código'; inp.value = busca;
+  inp.oninput = e => {
+    busca = e.target.value; render();
+    const i = $('#busca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length);
+  };
+  fl.appendChild(inp);
+  const fa = el('button', 'chip' + (filtro === 'alerta' ? ' on' : ''), 'Só pendentes');
+  fa.onclick = () => { filtro = filtro === 'alerta' ? null : 'alerta'; render(); };
+  fl.appendChild(fa);
+  const nv = el('button', 'chip', '+ Novo cliente'); nv.onclick = () => novoCliente(); fl.appendChild(nv);
+  tela.appendChild(fl);
+
+  const rh = el('div', 'rowhead');
+  ['Anúnc. Excl. Pagto', 'Empresa', 'Responsável', 'Valor', 'Vencto', 'WhatsApp'].forEach(t => rh.appendChild(el('div', '', t)));
+  tela.appendChild(rh);
+
+  let l = cs.slice();
+  if (filtro === 'alerta') l = l.filter(c => leds(c).some(st => st.s === 'off' || st.s === 'wait'));
+  if (busca) { const q = busca.toLowerCase(); l = l.filter(c => (c.empresa + ' ' + c.responsavel + ' ' + c.cod).toLowerCase().includes(q)); }
+  l.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR'));
+  const lista = el('div', 'box');
+  if (!l.length) lista.appendChild(el('div', 'empty', 'Nenhum cliente com esse filtro.'));
+  l.forEach(c => {
+    const r = el('div', 'row'); r.tabIndex = 0; r.setAttribute('role', 'button');
+    r.appendChild(marcadores(c));
+    const n = el('div', 'nome', c.empresa);
+    const ex = excs(c)[0];
+    n.appendChild(el('small', '', [
+      c.ultAtualizacao ? 'anúncio ' + br(c.ultAtualizacao) : 'anúncio sem registro',
+      ex ? 'exclus. ' + br(ex.data) : 'sem exclusividade'
+    ].join(' · ')));
+    r.appendChild(n);
+    r.appendChild(el('div', 'cell resp', c.responsavel || '—'));
+    r.appendChild(el('div', 'cell r', c.valor ? money(c.valor) : '—'));
+    r.appendChild(el('div', 'cell r', c.diaVenc ? 'dia ' + c.diaVenc : '—'));
+    const acoes = el('div', 'acoes');
+    const z1 = el('button', 'mini zap', '★');
+    z1.title = 'WhatsApp: informar exclusividade';
+    z1.onclick = e => { e.stopPropagation(); abrirExclusividade(c.id); };
+    const z2 = el('button', 'mini zap', '⟳');
+    z2.title = 'WhatsApp: convidar a atualizar o anúncio';
+    z2.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
+    acoes.append(z1, z2);
+    r.appendChild(acoes);
+    r.onclick = () => abrirCliente(c.id);
+    r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
+    lista.appendChild(r);
+  });
+  tela.appendChild(lista);
+  const lg = el('div', 'legend');
+  lg.innerHTML = '<span>Clique nas bolinhas para marcar: anúncio · exclusividade · pagamento</span>' +
+    '<span><i style="background:var(--ok)"></i>feito neste mês</span>' +
+    '<span><i style="background:var(--warn)"></i>pendente</span>' +
+    '<span><i style="background:var(--bad)"></i>parado há muito tempo</span>' +
+    '<span>★ avisar exclusividade &nbsp;·&nbsp; ⟳ convidar a atualizar</span>';
+  tela.appendChild(lg);
+
+  /* exclusividades registradas */
+  const evs = DB.eventos.filter(e => e.tipo === 'exclusividade' && todos.some(c => c.id === e.cli))
+    .sort((a, b) => (b.data + (b.hora || '')).localeCompare(a.data + (a.hora || '')));
+  tela.appendChild(bloco('Exclusividades registradas', evs.length ? evs.length + ' no total' : ''));
+  const ex = el('div', 'box');
+  if (!evs.length) ex.appendChild(el('div', 'empty', 'Nenhuma registrada ainda. Use o botão ★ na lista para avisar o cliente pelo WhatsApp e marcar dia e hora.'));
+  evs.slice(0, 8).forEach(e => {
+    const c = DB.clientes.find(x => x.id === e.cli);
+    const d = el('div', 'exc' + (e.data >= hojeIso ? '' : ' passada'));
+    d.appendChild(el('time', '', br(e.data) + (e.hora ? ' · ' + e.hora : '')));
+    d.appendChild(el('b', '', c ? c.empresa : ''));
+    d.appendChild(el('span', '', e.nota || (e.data >= hojeIso ? 'agendada' : '')));
+    ex.appendChild(d);
+  });
+  tela.appendChild(ex);
+
+  /* resultado do mês */
+  const atrRec = DB.atrasados.filter(a => a.cidade === aba)
+    .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesAtual).reduce((x, r) => x + r.valor, 0), 0);
+  const desp = DB.despesas.filter(d => d.cidade === aba && d.ref === mesAtual);
+  const totDesp = desp.reduce((t, d) => t + d.valor, 0);
+  const saldo = recebido + atrRec - totDesp;
+  tela.appendChild(bloco('Resultado do mês', cidadeNome(aba), ['+ Despesa', novaDespesa]));
+  const rb = el('div', 'box');
+  rb.appendChild(linha('Recebido de mensalidades', money(recebido)));
+  rb.appendChild(linha('Recebido de atrasados', money(atrRec)));
+  desp.forEach(d => {
+    const l = linha(d.nome, '− ' + money(d.valor), 'desp');
+    const x = el('button', 'linx', '✕'); x.title = 'Remover despesa';
+    x.onclick = async () => {
+      if (!confirm('Remover a despesa "' + d.nome + '"?')) return;
+      DB.despesas = DB.despesas.filter(y => y.id !== d.id); await salvar(); render();
+    };
+    l.appendChild(x); rb.appendChild(l);
+  });
+  rb.appendChild(linha('Total de despesas', money(totDesp), 'sub'));
+  rb.appendChild(linha('Saldo do mês', (saldo < 0 ? '− ' : '') + money(Math.abs(saldo)), saldo < 0 ? 'tot neg' : 'tot'));
+  (DIVISAO[aba] || []).forEach(([quem, pct]) => {
+    rb.appendChild(linha(`${pct}% ${quem}`, (saldo < 0 ? '− ' : '') + money(Math.abs(saldo) * pct / 100), 'sub'));
+  });
+  tela.appendChild(rb);
+
+  /* cortesias */
+  tela.appendChild(bloco('Cortesias', cort.length + ' sem cobrança', [verCortesias ? 'Ocultar' : 'Mostrar', () => { verCortesias = !verCortesias; render(); }]));
+  if (verCortesias) {
+    const cx = el('div', 'box cortesias');
+    if (!cort.length) cx.appendChild(el('div', 'empty', 'Nenhuma cortesia nesta cidade.'));
+    cort.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR')).forEach(c => {
+      const r = el('button', 'row cortesia-row');
+      r.appendChild(el('div', 'nome', c.empresa));
+      r.appendChild(el('div', 'cell resp', c.responsavel || '—'));
+      r.appendChild(el('div', 'cell r', c.cod ? 'cód ' + c.cod : '—'));
+      r.onclick = () => abrirCliente(c.id);
+      cx.appendChild(r);
+    });
+    tela.appendChild(cx);
+  }
+  tela.appendChild(rodape());
+}
+
+function linha(rot, val, cls) {
+  const l = el('div', 'lin ' + (cls || ''));
+  l.appendChild(el('span', '', rot));
+  l.appendChild(el('b', '', val));
+  return l;
+}
+function novaDespesa() {
+  modal('Despesa de ' + cidadeNome(aba) + ' em ' + mesNome(mesAtual), [
+    { id: 'nome', rot: 'Descrição', valor: '', ph: 'Internet, contadora, manutenção...' },
+    { id: 'valor', rot: 'Valor', mask: 'moeda', valor: '', ph: 'R$ 0,00' }
+  ], async v => {
+    if (!v.nome.trim()) { alert('Informe a descrição.'); return true; }
+    DB.despesas.push({ id: uid(), cidade: aba, ref: mesAtual, nome: v.nome.trim(), valor: desmascMoeda(v.valor) });
+    await salvar(); render();
+  }, 'Lançar');
+}
+
+function marcadores(c) {
+  const g = el('div', 'leds');
+  const st = leds(c);
+  [['arte', 'anúncio'], ['exclusividade', 'exclusividade'], ['pagamento', 'pagamento']].forEach(([tipo, nome], i) => {
+    const b = el('button', 'pxbtn');
+    b.appendChild(el('div', 'px ' + st[i].s));
+    const bloqueado = eCortesia(c) || (tipo === 'pagamento' && !c.valor);
+    b.title = st[i].t + (bloqueado ? '' : st[i].s === 'on' ? ' · clique para desfazer' : ` · clique para marcar ${nome}`);
+    b.setAttribute('aria-label', st[i].t);
+    if (bloqueado) b.disabled = true;
+    else b.onclick = e => { e.stopPropagation(); marcar(c.id, tipo); };
+    g.appendChild(b);
+  });
+  return g;
+}
+
+async function marcar(id, tipo) {
+  const c = DB.clientes.find(x => x.id === id);
+  const st = tipo === 'arte' ? statusArteMes(c) : tipo === 'exclusividade' ? statusExcMes(c) : statusPag(c);
+  if (st.s === 'on') {                                   // desfazer o registro do mês
+    const ev = DB.eventos.filter(e => e.cli === id && e.tipo === tipo &&
+      (e.ref || e.data.slice(0, 7)) === mesAtual).sort((a, b) => b.data.localeCompare(a.data))[0];
+    if (!ev) return;
+    if (!confirm(`Desfazer o registro de ${tipo === 'arte' ? 'troca de anúncio' : tipo} de ${c.empresa} em ${br(ev.data)}?`)) return;
+    DB.eventos = DB.eventos.filter(e => e.id !== ev.id);
+    recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
+    return;
+  }
+  const ev = { id: uid(), cli: id, tipo, data: hojeIso, nota: '' };
+  if (tipo === 'pagamento') {
+    modal(`Pagamento — ${c.empresa}`, [
+      { id: 'valor', rot: 'Valor recebido (ref. ' + mesNome(mesAtual) + ')', mask: 'moeda', valor: fmtMoedaEdit(c.valor) },
+      { id: 'nota', rot: 'Observação (opcional)', valor: '' }
+    ], async v => {
+      DB.eventos.push({ id: uid(), cli: id, tipo: 'pagamento', data: hojeIso, ref: mesAtual, valor: desmascMoeda(v.valor), nota: v.nota.trim() });
+      await salvar(); render(); if (abertoId === id) abrirCliente(id);
+    }, 'Registrar');
+    return;
+  }
+  if (tipo === 'exclusividade') { abrirExclusividade(id); return; }
+  if (!confirm(`Marcar que o anúncio de ${c.empresa} foi trocado hoje (${br(hojeIso)})?`)) return;
+  DB.eventos.push(ev); recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
+}
+
+function telaAtrasados() {
+  const tela = $('#tela');
+  const at = DB.atrasados.slice().sort((a, b) => b.saldo - a.saldo);
+  const abertos = at.filter(a => a.saldo > 0);
+  const recMes = at.reduce((s, a) => s + (a.recebidos || []).filter(r => r.data.slice(0, 7) === mesAtual).reduce((x, r) => x + r.valor, 0), 0);
+  const online = abertos.filter(a => (a.status || '').toLowerCase() === 'online');
+  tela.appendChild(kpis([
+    ['Total em aberto', money(abertos.reduce((s, a) => s + a.saldo, 0)), 'alert'],
+    ['Devedores', abertos.length, ''],
+    ['Recebido em ' + mesNome(mesAtual), money(recMes), 'good'],
+    ['Ainda no ar devendo', online.length, online.length ? 'warn' : 'good'],
+    ['Sem contato há +15 dias', abertos.filter(a => { const d = desde(a.ultContato); return d === null || d > 15; }).length, 'warn'],
+  ]));
+  tela.appendChild(bloco('Cobranças', abertos.length + ' em aberto'));
+  const fl = el('div', 'filters');
+  ['OLINDINA', 'NOVA SOURE', 'Online', 'Pausado'].forEach(f => {
+    const b = el('button', 'chip' + (filtro === f ? ' on' : ''), f === 'OLINDINA' || f === 'NOVA SOURE' ? cidadeNome(f) : f);
+    b.onclick = () => { filtro = filtro === f ? null : f; render(); };
+    fl.appendChild(b);
+  });
+  const nv = el('button', 'chip', '+ Novo devedor'); nv.onclick = novoAtrasado; fl.appendChild(nv);
+  tela.appendChild(fl);
+  let l = at;
+  if (filtro === 'OLINDINA' || filtro === 'NOVA SOURE') l = l.filter(a => a.cidade === filtro);
+  else if (filtro) l = l.filter(a => (a.status || '').toLowerCase() === filtro.toLowerCase());
+  const box = el('div', 'box');
+  if (!l.length) box.appendChild(el('div', 'empty', 'Nenhum devedor nesse filtro.'));
+  l.forEach(a => {
+    const r = el('button', 'row'); r.style.gridTemplateColumns = '22px 1fr 96px 96px 88px 72px';
+    const f = statusContato(a);
+    const p = el('div', 'px ' + f.s); p.title = f.t; r.appendChild(p);
+    const n = el('div', 'nome', a.nome);
+    n.appendChild(el('small', '', [cidadeNome(a.cidade), a.meses ? a.meses + ' meses' : '', a.saldo <= 0 ? 'quitado' : ''].filter(Boolean).join(' · ')));
+    r.appendChild(n);
+    const st = el('div'); st.appendChild(el('span', 'st ' + (a.status || '').toLowerCase(), a.status || '—')); r.appendChild(st);
+    r.appendChild(el('div', 'cell', a.ultContato ? 'falou ' + br(a.ultContato) : 'sem contato'));
+    r.appendChild(el('div', 'cell r', money(a.saldo)));
+    r.appendChild(el('div', 'cell r', a.total !== a.saldo ? 'de ' + money(a.total) : ''));
+    r.onclick = () => abrirAtrasado(a.id);
+    box.appendChild(r);
+  });
+  tela.appendChild(box);
+  tela.appendChild(rodape());
+}
+
+function rodape() {
+  const f = el('div', 'foot');
+  const csv = el('button', 'ghost', 'Baixar CSV'); csv.onclick = expCsv;
+  const js = el('button', 'ghost', 'Baixar backup (JSON)'); js.onclick = () => baixar('carteira-led-' + hojeIso + '.json', JSON.stringify(DB, null, 1), 'application/json');
+  const imp = el('button', 'ghost', 'Restaurar backup'); imp.onclick = () => $('#file').click();
+  f.append(csv, js, imp);
+  const inp = el('input'); inp.type = 'file'; inp.accept = '.json'; inp.id = 'file'; inp.style.display = 'none';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = async () => {
+      try { const d = JSON.parse(r.result); if (!d.clientes) throw 0; DB = d; normalizar(); await salvar(); render(); }
+      catch (err) { alert('Esse arquivo não é um backup da carteira.'); }
+    };
+    r.readAsText(file);
+  };
+  f.appendChild(inp);
+  return f;
+}
+
+/* ---------------- detalhe do cliente ---------------- */
+function abrirCliente(id) {
+  abertoId = id;
+  const c = DB.clientes.find(x => x.id === id);
+  const evs = evsDe(id).sort((a, b) => (b.data + (b.hora || '')).localeCompare(a.data + (a.hora || '')));
+  const [a, p, f] = leds(c);
+  const s = $('#sheet');
+  s.innerHTML = `
+  <header>
+    <button class="close" id="fechar" aria-label="Fechar">✕</button>
+    <h2>${esc(c.empresa)}</h2>
+    <p>${esc(cidadeNome(c.conta))}${eCortesia(c) ? ' · cortesia' : ''} ${c.cod ? '· cód ' + esc(c.cod) : ''}</p>
+  </header>
+  <div class="body">
+    <div class="acts">
+      <button class="act zap" data-zap="exclusividade">Informar exclusividade</button>
+      <button class="act zap" data-zap="atualizacao">Convidar a atualizar</button>
+      <button class="act" data-reg="arte">Troquei o anúncio</button>
+      <button class="act" data-reg="exclusividade">Registrar exclusividade</button>
+      <button class="act" data-reg="contato">Falei com o cliente</button>
+      ${eCortesia(c) ? '' : `<button class="act" data-reg="pagamento">Recebi ${mesNome(mesAtual)}</button>`}
+    </div>
+    <div class="legend" style="margin:0">
+      <span><i class="px ${a.s}"></i>${a.t}</span><span><i class="px ${p.s}"></i>${p.t}</span><span><i class="px ${f.s}"></i>${f.t}</span>
+    </div>
+    ${eCortesia(c) ? '<div class="warnbar" style="margin:12px 0 0">Cortesia: sem cobrança e sem compromisso de trocar o anúncio. Não entra nos indicadores do mês.</div>' : ''}
+
+    <div class="subhead">Cadastro</div>
+    <div class="grid2">
+      <div class="f"><label>Responsável</label><input id="e_resp" value="${esc(c.responsavel)}"></div>
+      <div class="f"><label>WhatsApp</label><input id="e_tel" data-mask="tel" value="${esc(c.telefone)}" placeholder="75 9 99998855"></div>
+      <div class="f"><label>Cidade</label><select id="e_conta">${['OLINDINA', 'NOVA SOURE'].map(x => `<option value="${x}" ${x === c.conta ? 'selected' : ''}>${cidadeNome(x)}</option>`).join('')}</select></div>
+      <div class="f"><label>Tipo</label><select id="e_tipo">${[['cliente', 'Cliente'], ['cortesia', 'Cortesia']].map(([v, t]) => `<option value="${v}" ${v === c.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="f"><label>Valor mensal</label><input id="e_valor" data-mask="moeda" value="${fmtMoedaEdit(c.valor)}" placeholder="R$ 0,00"></div>
+      <div class="f"><label>Dia do pagamento</label><input id="e_venc" data-mask="num" value="${c.diaVenc || ''}" placeholder="10"></div>
+    </div>
+    <div class="f"><label>Código no painel</label><input id="e_cod" value="${esc(c.cod)}"></div>
+    <div class="f"><label>Observações</label><textarea id="e_obs" rows="3">${esc(c.obs)}</textarea></div>
+    <button class="primary" id="salvar">Salvar alterações</button>
+
+    <div class="subhead">Histórico (${evs.length})</div>
+    <div class="hist">${evs.length ? evs.map(e => `
+      <div><time>${br(e.data)}${e.hora ? ' ' + e.hora : ''}</time>
+      <b>${e.tipo === 'pagamento' ? 'pagto' : e.tipo === 'exclusividade' ? 'exclus.' : e.tipo === 'arte' ? 'anúncio' : e.tipo}</b>
+      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${esc(e.nota || '')}</s>
+      <button data-del="${e.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhum registro ainda.</div>'}</div>
+
+    <div class="foot" style="margin-top:22px">
+      <button class="ghost" id="inativar">${c.ativo ? 'Marcar como encerrado' : 'Reativar cliente'}</button>
+      <button class="ghost" id="paraAtraso">Mandar para atrasados</button>
+    </div>
+  </div>`;
+  abrirSheet();
+  s.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => registrar(id, b.dataset.reg));
+  s.querySelectorAll('[data-zap]').forEach(b => b.onclick = () => b.dataset.zap === 'exclusividade' ? abrirExclusividade(id) : abrirConvite(id));
+  s.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    DB.eventos = DB.eventos.filter(e => e.id !== b.dataset.del);
+    recalc(id); await salvar(); abrirCliente(id); render();
+  });
+  $('#fechar').onclick = fechar;
+  $('#salvar').onclick = () => salvarCadastro(id);
+  $('#inativar').onclick = async () => { c.ativo = !c.ativo; await salvar(); fechar(); render(); };
+  $('#paraAtraso').onclick = () => modal(`Mandar ${c.empresa} para atrasados`, [
+    { id: 'valor', rot: 'Valor devido de meses anteriores', mask: 'moeda', valor: fmtMoedaEdit(c.valor) },
+    { id: 'meses', rot: 'Meses em aberto', mask: 'num', valor: '' }
+  ], async v => {
+    const val = desmascMoeda(v.valor);
+    DB.atrasados.push({
+      id: uid(), nome: c.empresa, cidade: c.conta, status: 'Online',
+      meses: parseInt(String(v.meses).replace(/\D/g, '')) || null, total: val, saldo: val,
+      obs: '', ultContato: c.ultContato, recebidos: []
+    });
+    await salvar(); fechar(); aba = 'ATRASADOS'; marcarAba(); render();
+  }, 'Cadastrar');
+}
+function abrirSheet() { ligaMascaras($('#sheet')); $('#sheet').classList.add('open'); $('#sheet').setAttribute('aria-hidden', 'false'); $('#scrim').classList.add('open'); }
+function fechar() { $('#sheet').classList.remove('open'); $('#sheet').setAttribute('aria-hidden', 'true'); $('#scrim').classList.remove('open'); abertoId = null; }
+
+async function registrar(id, tipo) {
+  if (tipo === 'pagamento' || tipo === 'exclusividade') return marcar(id, tipo);
+  const c = DB.clientes.find(x => x.id === id);
+  const rot = tipo === 'arte' ? 'Troca de anúncio' : 'Contato';
+  modal(`${rot} — ${c.empresa}`, [
+    { id: 'nota', rot: tipo === 'arte' ? 'Nota sobre o novo anúncio (opcional)' : 'Como foi a conversa? (opcional)', tipo: 'textarea', valor: '' }
+  ], async v => {
+    DB.eventos.push({ id: uid(), cli: id, tipo, data: hojeIso, nota: v.nota.trim() });
+    recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
+  }, 'Registrar');
+}
+function parseData(s) {
+  const m = String(s).trim().match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?$/);
+  if (!m) return null;
+  let [_, d, mo, y] = m; y = y ? (y.length === 2 ? '20' + y : y) : mesAtual.slice(0, 4);
+  const dt = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return isNaN(new Date(dt + 'T12:00:00')) ? null : dt;
+}
+function recalc(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  const ult = t => DB.eventos.filter(e => e.cli === id && e.tipo === t && e.data <= hojeIso).map(e => e.data).sort().pop() || null;
+  c.ultAtualizacao = ult('arte'); c.ultContato = ult('contato');
+}
+async function salvarCadastro(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  c.responsavel = padroniza($('#e_resp').value); c.telefone = $('#e_tel').value.trim();
+  c.cod = $('#e_cod').value.trim(); c.conta = $('#e_conta').value; c.tipo = $('#e_tipo').value;
+  c.valor = desmascMoeda($('#e_valor').value);
+  c.diaVenc = parseInt(String($('#e_venc').value).replace(/\D/g, '')) || null;
+  c.obs = $('#e_obs').value.trim();
+  await salvar(); render(); abrirCliente(id);
+}
+function novoCliente(pre) {
+  pre = pre || {};
+  const campos = [
+    { id: 'empresa', rot: 'Empresa', valor: pre.empresa || '', ph: 'Nome da empresa' },
+    { id: 'responsavel', rot: 'Responsável', valor: pre.responsavel || '' },
+    { id: 'telefone', rot: 'WhatsApp', mask: 'tel', valor: pre.telefone || '', ph: '75 9 99998855' },
+    { id: 'valor', rot: 'Valor mensal', mask: 'moeda', valor: '', ph: 'R$ 0,00' },
+    { id: 'diaVenc', rot: 'Dia do pagamento', mask: 'num', valor: '', ph: '10' },
+    { id: 'cod', rot: 'Código no painel', valor: '' },
+    { id: 'conta', tipo: 'select', rot: 'Cidade', valor: (aba === 'OLINDINA' || aba === 'NOVA SOURE') ? aba : 'OLINDINA',
+      opcoes: [['OLINDINA', 'Olindina'], ['NOVA SOURE', 'Nova Soure']] },
+    { id: 'tipo', tipo: 'select', rot: 'Tipo', valor: 'cliente', opcoes: [['cliente', 'Cliente'], ['cortesia', 'Cortesia']] },
+    { id: 'obs', tipo: 'textarea', rot: 'Observações', valor: pre.obs || '' }
+  ];
+  modal('Novo cliente', campos, async v => {
+    if (!v.empresa.trim()) { alert('Informe o nome da empresa.'); return true; }
+    const c = {
+      id: uid(), conta: v.conta, tipo: v.tipo, empresa: padroniza(v.empresa), responsavel: padroniza(v.responsavel),
+      telefone: v.telefone.trim(), cod: v.cod.trim(), valor: desmascMoeda(v.valor),
+      diaVenc: parseInt(String(v.diaVenc).replace(/\D/g, '')) || null,
+      ultAtualizacao: null, ultContato: null, obs: v.obs.trim(), ativo: true
+    };
+    DB.clientes.push(c);
+    if (pre.prospectId) DB.prospects = DB.prospects.filter(p => p.id !== pre.prospectId);
+    await salvar();
+    aba = c.conta; marcarAba(); render(); abrirCliente(c.id);
+  }, 'Cadastrar');
+}
+
+/* ---------------- prospecção ---------------- */
+function telaProspeccao() {
+  const tela = $('#tela');
+  const ps = DB.prospects.slice().sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  tela.appendChild(kpis([
+    ['Na lista', ps.length, ''],
+    ['Sem contato registrado', ps.filter(p => !p.ultContato).length, ''],
+    ['Falados neste mês', ps.filter(p => (p.ultContato || '').slice(0, 7) === mesAtual).length, 'good'],
+  ]));
+  tela.appendChild(bloco('Cadastrar prospecção', 'quem eu falei ou preciso falar'));
+  const cx = el('div', 'box');
+  const fm = el('div', 'formlinha');
+  const nome = el('input'); nome.type = 'text'; nome.placeholder = 'Nome';
+  const tel = el('input'); tel.type = 'tel'; tel.placeholder = '75 9 99998855'; tel.setAttribute('data-mask', 'tel');
+  const bt = el('button', 'primary', 'Adicionar');
+  const gravar = async () => {
+    if (!nome.value.trim()) { nome.focus(); return; }
+    DB.prospects.push({ id: uid(), nome: padroniza(nome.value), telefone: tel.value.trim(), data: hojeIso, ultContato: null, obs: '' });
+    await salvar(); render();
+  };
+  bt.onclick = gravar;
+  [nome, tel].forEach(i => i.onkeydown = e => { if (e.key === 'Enter') gravar(); });
+  fm.append(nome, tel, bt); cx.appendChild(fm); tela.appendChild(cx);
+
+  tela.appendChild(bloco('Prospecções', ps.length ? ps.length + ' na lista' : ''));
+  const box = el('div', 'box');
+  if (!ps.length) box.appendChild(el('div', 'empty', 'Ninguém na lista ainda. Cadastre acima quem você falou ou lembrou de falar.'));
+  ps.forEach(p => {
+    const r = el('div', 'row prosp');
+    const n = el('div', 'nome', p.nome);
+    n.appendChild(el('small', '', [p.telefone || 'sem telefone',
+      p.ultContato ? 'falou ' + br(p.ultContato) : 'anotado ' + br(p.data)].join(' · ')));
+    r.appendChild(n);
+    const acoes = el('div', 'acoes');
+    const z = el('button', 'mini zap', '✆'); z.title = 'Abrir conversa no WhatsApp';
+    z.onclick = async () => {
+      const num = zapNum(p.telefone);
+      if (!num) { alert('Cadastre o telefone dessa prospecção.'); return; }
+      p.ultContato = hojeIso; await salvar(); render();
+      window.open(`https://wa.me/${num}`, '_blank');
+    };
+    const v = el('button', 'mini', '★'); v.title = 'Virou cliente';
+    v.onclick = () => novoCliente({ empresa: p.nome, telefone: p.telefone, prospectId: p.id });
+    const x = el('button', 'mini', '✕'); x.title = 'Remover';
+    x.onclick = async () => {
+      if (!confirm('Remover ' + p.nome + ' da prospecção?')) return;
+      DB.prospects = DB.prospects.filter(y => y.id !== p.id); await salvar(); render();
+    };
+    acoes.append(z, v, x); r.appendChild(acoes);
+    box.appendChild(r);
+  });
+  tela.appendChild(box);
+  tela.appendChild(rodape());
+}
+
+/* ---------------- detalhe do atrasado ---------------- */
+function abrirAtrasado(id) {
+  abertoId = id;
+  const a = DB.atrasados.find(x => x.id === id);
+  const recs = (a.recebidos || []).slice().sort((x, y) => y.data.localeCompare(x.data));
+  const s = $('#sheet');
+  s.innerHTML = `
+  <header>
+    <button class="close" id="fechar" aria-label="Fechar">✕</button>
+    <h2>${esc(a.nome)}</h2>
+    <p>${cidadeNome(a.cidade)} · saldo ${money(a.saldo)}${a.meses ? ' · ' + a.meses + ' meses' : ''}</p>
+  </header>
+  <div class="body">
+    <div class="acts">
+      <button class="act" id="receber">Recebi um valor</button>
+      <button class="act" id="falei">Falei com ele</button>
+      <button class="act wide" id="alternar">${(a.status || '').toLowerCase() === 'pausado' ? 'Colocar anúncio no ar' : 'Pausar o anúncio'}</button>
+    </div>
+    <div class="subhead">Cobrança</div>
+    <div class="grid2">
+      <div class="f"><label>Saldo devedor</label><input id="a_saldo" data-mask="moeda" value="${fmtMoedaEdit(a.saldo)}"></div>
+      <div class="f"><label>Meses em aberto</label><input id="a_meses" data-mask="num" value="${a.meses || ''}"></div>
+      <div class="f"><label>Cidade</label><select id="a_cid">${['OLINDINA', 'NOVA SOURE'].map(x => `<option value="${x}" ${x === a.cidade ? 'selected' : ''}>${cidadeNome(x)}</option>`).join('')}</select></div>
+      <div class="f"><label>Anúncio</label><select id="a_st">${['Online', 'Pausado'].map(x => `<option ${x === a.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="f"><label>Tratativa / última resposta</label><textarea id="a_obs" rows="3">${esc(a.obs)}</textarea></div>
+    <button class="primary" id="a_salvar">Salvar alterações</button>
+    <div class="subhead">Recebimentos (${recs.length})</div>
+    <div class="hist">${recs.length ? recs.map(r => `
+      <div><time>${br(r.data)}</time><b>${money(r.valor)}</b><s>${esc(r.nota || '')}</s>
+      <button data-del="${r.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nada recebido ainda.</div>'}</div>
+    <div class="foot" style="margin-top:22px"><button class="ghost" id="a_del">Remover da lista</button></div>
+  </div>`;
+  abrirSheet();
+  $('#fechar').onclick = fechar;
+  $('#receber').onclick = () => modal(`Recebimento — ${a.nome}`, [
+    { id: 'valor', rot: 'Valor recebido', mask: 'moeda', valor: '', ph: 'R$ 0,00' },
+    { id: 'nota', rot: 'Observação (opcional)', valor: '' }
+  ], async v => {
+    const val = desmascMoeda(v.valor);
+    a.recebidos.push({ id: uid(), data: hojeIso, valor: val, nota: v.nota.trim() });
+    a.saldo = Math.max(0, +(a.saldo - val).toFixed(2)); a.ultContato = hojeIso;
+    await salvar(); abrirAtrasado(id); render();
+  }, 'Registrar');
+  $('#falei').onclick = () => modal(`Contato — ${a.nome}`, [
+    { id: 'obs', tipo: 'textarea', rot: 'O que ele respondeu?', valor: a.obs || '' }
+  ], async v => {
+    a.obs = v.obs.trim(); a.ultContato = hojeIso; await salvar(); abrirAtrasado(id); render();
+  }, 'Salvar');
+  $('#alternar').onclick = async () => {
+    a.status = (a.status || '').toLowerCase() === 'pausado' ? 'Online' : 'Pausado';
+    await salvar(); abrirAtrasado(id); render();
+  };
+  $('#a_salvar').onclick = async () => {
+    a.saldo = desmascMoeda($('#a_saldo').value);
+    a.meses = parseInt(String($('#a_meses').value).replace(/\D/g, '')) || null;
+    a.cidade = $('#a_cid').value; a.status = $('#a_st').value; a.obs = $('#a_obs').value.trim();
+    await salvar(); render(); abrirAtrasado(id);
+  };
+  $('#a_del').onclick = async () => {
+    if (!confirm('Remover ' + a.nome + ' da lista de atrasados?')) return;
+    DB.atrasados = DB.atrasados.filter(x => x.id !== id);
+    await salvar(); fechar(); render();
+  };
+  s.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    const r = a.recebidos.find(x => x.id === b.dataset.del);
+    if (r) { a.saldo = +(a.saldo + r.valor).toFixed(2); a.recebidos = a.recebidos.filter(x => x.id !== r.id); }
+    await salvar(); abrirAtrasado(id); render();
+  });
+}
+function novoAtrasado() {
+  modal('Novo devedor', [
+    { id: 'nome', rot: 'Nome', valor: '' },
+    { id: 'valor', rot: 'Valor em aberto', mask: 'moeda', valor: '', ph: 'R$ 0,00' },
+    { id: 'cidade', tipo: 'select', rot: 'Cidade', valor: 'OLINDINA', opcoes: [['OLINDINA', 'Olindina'], ['NOVA SOURE', 'Nova Soure']] }
+  ], async v => {
+    if (!v.nome.trim()) { alert('Informe o nome.'); return true; }
+    const val = desmascMoeda(v.valor);
+    const a = { id: uid(), nome: padroniza(v.nome), cidade: v.cidade, status: 'Online', meses: null, total: val, saldo: val, obs: '', ultContato: null, recebidos: [] };
+    DB.atrasados.push(a); await salvar(); render(); abrirAtrasado(a.id);
+  }, 'Cadastrar');
+}
+
+/* ---------------- exportar ---------------- */
+function baixar(nome, texto, tipo) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nome; a.click();
+}
+function expCsv() {
+  let cab, linhas, nome;
+  if (aba === 'ATRASADOS') {
+    nome = 'atrasados-led';
+    cab = ['NOME', 'CIDADE', 'ANUNCIO', 'MESES', 'TOTAL', 'SALDO', 'ULT_CONTATO', 'TRATATIVA'];
+    linhas = DB.atrasados.map(a => [a.nome, cidadeNome(a.cidade), a.status, a.meses || '', a.total, a.saldo, a.ultContato || '', a.obs]);
+  } else {
+    nome = 'carteira-' + aba.toLowerCase().replace(' ', '-');
+    cab = ['CIDADE', 'TIPO', 'EMPRESA', 'RESPONSAVEL', 'WHATSAPP', 'COD', 'VALOR', 'DIA_PAGTO', 'ULT_TROCA_ANUNCIO', 'ULT_EXCLUSIVIDADE', 'ULT_CONTATO', 'PAGO_MES', 'ATIVO', 'OBS'];
+    linhas = daCidade().map(c => {
+      const ex = excs(c)[0];
+      return [cidadeNome(c.conta), c.tipo, c.empresa, c.responsavel, c.telefone, c.cod, c.valor, c.diaVenc || '',
+      c.ultAtualizacao || '', ex ? ex.data : '', c.ultContato || '',
+      eCortesia(c) ? 'cortesia' : (pagoNoMes(c) ? 'SIM' : 'NAO'), c.ativo ? 'SIM' : 'NAO', c.obs];
+    });
+  }
+  const txt = [cab.join(';'), ...linhas.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
+  baixar(nome + '-' + hojeIso + '.csv', '\uFEFF' + txt, 'text/csv');
+}
+
+/* ---------------- navegação ---------------- */
+function marcarAba() { [...$('#tabs').children].forEach(x => x.classList.toggle('on', x.dataset.aba === aba)); }
+$('#tabs').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  aba = b.dataset.aba; filtro = null; busca = ''; verCortesias = false;
+  marcarAba(); render();
+};
+$('#scrim').onclick = fechar;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+
+carregar().then(() => { flag(!memoriaSomente, memoriaSomente ? 'Só nesta sessão' : 'Salvo'); render(); });
+
+</script>
