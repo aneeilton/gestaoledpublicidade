@@ -44,6 +44,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .mesobs{color:var(--muted-2)}
 .linbt{margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--accent);
   padding:6px 10px;border-radius:8px;font-size:12.5px}
+.btdespesa{width:100%;border:0;border-top:1px solid var(--border);background:var(--accent);color:#fff;
+  padding:14px;font-size:14.5px;font-weight:600;letter-spacing:.01em}
+.btdespesa:hover{filter:brightness(1.08)}
 
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 13px;box-shadow:var(--shadow)}
@@ -75,7 +78,7 @@ input::placeholder{color:var(--muted-2)}
 .chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 13px;font-size:13px;border-radius:9px}
 .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-.rowhead,.row{display:grid;grid-template-columns:96px 1fr 110px 82px 70px 78px;gap:10px;align-items:center}
+.rowhead,.row{display:grid;grid-template-columns:96px 1fr 104px 78px 62px 116px;gap:10px;align-items:center}
 .rowhead{padding:0 14px 6px;font-size:11.5px;color:var(--muted-2)}
 .row{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;color:var(--text);cursor:pointer}
 .row:last-child{border-bottom:0}
@@ -93,7 +96,7 @@ input::placeholder{color:var(--muted-2)}
 .cell.r{text-align:right}
 .acoes{display:flex;gap:5px;justify-content:flex-end}
 .mini{border:1px solid var(--border);background:var(--surface);color:var(--zap);width:32px;height:30px;flex:none;
-  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;font-weight:500}
 .mini:hover{background:var(--zap);color:#fff;border-color:var(--zap)}
 .st{font-size:11.5px;border:1px solid var(--border);border-radius:20px;padding:2px 9px;color:var(--muted)}
 .st.pausado{color:var(--warn);border-color:#F0D6A2;background:#FDF6E7}
@@ -240,6 +243,8 @@ const SUPABASE_KEY = 'sb_publishable_1sohqR4OnESmTng3VL727w_Prvp8Zj4';
 const usaSupabase = () => !!(SUPABASE_URL && SUPABASE_KEY);
 
 const KEY = 'ledplus:carteira:v3';
+const PIX = '75 9 9908 0139';   // chave pix enviada na mensagem de cobrança
+
 const DESPESAS_PLANEJADAS = [
   ['Designers', 350],
   ['Manutenção - Tico', 300],
@@ -497,6 +502,18 @@ function abrirExclusividade(id) {
     }
   }, 'Registrar');
 }
+async function abrirCobranca(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  const num = await garantirZap(c);
+  if (!num) return;
+  const msg = `Oi, *${primeiroNome(c)}*\n` +
+    `Tudo bom? \n\n` +
+    `Estamos passando pra deixar a chave pix referente o pagamento do mês atual\n` +
+    `${PIX}\n` +
+    `Led Publicidade\n\n` +
+    `Obrigado!`;
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+}
 async function abrirConvite(id) {
   const c = DB.clientes.find(x => x.id === id);
   const num = await garantirZap(c);
@@ -719,6 +736,12 @@ function telaCidade() {
     z2.title = 'WhatsApp: convidar a atualizar o anúncio';
     z2.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
     acoes.append(z1, z2);
+    if (!eCortesia(c)) {
+      const z3 = el('button', 'mini zap', 'R$');
+      z3.title = 'WhatsApp: cobrar com a chave pix';
+      z3.onclick = e => { e.stopPropagation(); abrirCobranca(c.id); };
+      acoes.appendChild(z3);
+    }
     r.appendChild(acoes);
     r.onclick = () => abrirCliente(c.id);
     r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
@@ -730,7 +753,7 @@ function telaCidade() {
     '<span><i style="background:var(--ok)"></i>feito neste mês</span>' +
     '<span><i style="background:var(--warn)"></i>pendente</span>' +
     '<span><i style="background:var(--bad)"></i>parado há muito tempo</span>' +
-    '<span>★ avisar exclusividade &nbsp;·&nbsp; ⟳ convidar a atualizar</span>';
+    '<span>★ avisar exclusividade &nbsp;·&nbsp; ⟳ convidar a atualizar &nbsp;·&nbsp; R$ cobrar com pix</span>';
   tela.appendChild(lg);
 
   /* exclusividades registradas */
@@ -756,7 +779,7 @@ function telaCidade() {
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   const totDesp = desp.reduce((t, d) => t + d.valor, 0);
   const saldo = recebido + atrRec - totDesp;
-  tela.appendChild(bloco('Resultado do mês', cidadeNome(aba), ['+ Despesa', novaDespesa]));
+  tela.appendChild(bloco('Resultado do mês', cidadeNome(aba)));
   const rb = el('div', 'box');
   if (!desp.length) {
     const ant = DB.despesas.filter(d => d.cidade === aba && d.ref === somaMes(mesRef, -1));
@@ -792,6 +815,9 @@ function telaCidade() {
   (DIVISAO[aba] || []).forEach(([quem, pct]) => {
     rb.appendChild(linha(`${pct}% ${quem}`, (saldo < 0 ? '− ' : '') + money(Math.abs(saldo) * pct / 100), 'sub'));
   });
+  const bd = el('button', 'btdespesa', '+  Lançar despesa de ' + cidadeNome(aba));
+  bd.onclick = novaDespesa;
+  rb.appendChild(bd);
   tela.appendChild(rb);
 
   /* cortesias */
@@ -965,6 +991,7 @@ function abrirCliente(id) {
     <div class="acts">
       <button class="act zap" data-zap="exclusividade">Informar exclusividade</button>
       <button class="act zap" data-zap="atualizacao">Convidar a atualizar</button>
+      ${eCortesia(c) ? '' : '<button class="act zap wide" data-zap="cobranca">Cobrar com a chave pix</button>'}
       <button class="act" data-reg="arte">Troquei o anúncio</button>
       <button class="act" data-reg="exclusividade">Registrar exclusividade</button>
       <button class="act" data-reg="contato">Falei com o cliente</button>
@@ -1002,7 +1029,11 @@ function abrirCliente(id) {
   </div>`;
   abrirSheet();
   s.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => registrar(id, b.dataset.reg));
-  s.querySelectorAll('[data-zap]').forEach(b => b.onclick = () => b.dataset.zap === 'exclusividade' ? abrirExclusividade(id) : abrirConvite(id));
+  s.querySelectorAll('[data-zap]').forEach(b => b.onclick = () => {
+    if (b.dataset.zap === 'exclusividade') return abrirExclusividade(id);
+    if (b.dataset.zap === 'cobranca') return abrirCobranca(id);
+    return abrirConvite(id);
+  });
   s.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
     DB.eventos = DB.eventos.filter(e => e.id !== b.dataset.del);
     recalc(id); await salvar(); abrirCliente(id); render();
