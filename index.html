@@ -78,7 +78,7 @@ input::placeholder{color:var(--muted-2)}
 .chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 13px;font-size:13px;border-radius:9px}
 .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-.rowhead,.row{display:grid;grid-template-columns:96px 1fr 104px 78px 62px 116px;gap:10px;align-items:center}
+.rowhead,.row{display:grid;grid-template-columns:1fr 118px 86px 62px 258px;gap:10px;align-items:center}
 .rowhead{padding:0 14px 6px;font-size:11.5px;color:var(--muted-2)}
 .row{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;color:var(--text);cursor:pointer}
 .row:last-child{border-bottom:0}
@@ -94,7 +94,30 @@ input::placeholder{color:var(--muted-2)}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cell{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cell.r{text-align:right}
-.acoes{display:flex;gap:5px;justify-content:flex-end}
+.acoes{display:flex;gap:6px;justify-content:flex-end}
+.pill{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);
+  color:var(--muted);border-radius:20px;padding:7px 12px 7px 10px;font-size:12.5px;font-weight:500;white-space:nowrap}
+.pill .pdot{width:9px;height:9px;border-radius:50%;background:var(--dead);flex:none}
+.pill.on{background:#EEF8F1;border-color:#BFE3CB;color:#12703A}
+.pill.on .pdot{background:var(--ok)}
+.pill.wait{background:#FDF6E7;border-color:#F0D6A2;color:#8A5C0B}
+.pill.wait .pdot{background:var(--warn)}
+.pill.off{background:#FDEFF0;border-color:#F2C2C6;color:#A82830}
+.pill.off .pdot{background:var(--bad)}
+.pill.dead{opacity:.5}
+.pill:hover:not(:disabled){filter:brightness(.97);border-color:var(--muted-2)}
+@media (prefers-color-scheme:dark){
+  .pill.on{background:#16281E;border-color:#245F3C;color:#6FDC9B}
+  .pill.wait{background:#2A2416;border-color:#5A4A21;color:#F0C378}
+  .pill.off{background:#2C1A1D;border-color:#5E2A30;color:#F0919A}
+}
+.popbg{position:fixed;inset:0;z-index:70}
+.popover{position:fixed;z-index:71;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.16);overflow:hidden;padding:4px}
+.poptit{font-size:11.5px;color:var(--muted-2);padding:8px 10px 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.popbt{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:10px 10px;
+  font-size:13.5px;border-radius:8px}
+.popbt:hover{background:var(--surface-2);color:var(--accent)}
 .mini{border:1px solid var(--border);background:var(--surface);color:var(--zap);width:32px;height:30px;flex:none;
   border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;font-weight:500}
 .mini:hover{background:var(--zap);color:#fff;border-color:var(--zap)}
@@ -188,8 +211,8 @@ label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
 @media (max-width:860px){
   .kpis{grid-template-columns:repeat(2,1fr)}
   .rowhead{display:none}
-  .row{grid-template-columns:1fr auto;row-gap:6px}
-  .row .leds{grid-column:1/-1;order:-1}
+  .row{grid-template-columns:1fr auto;row-gap:8px}
+  .row .acoes{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
   .row .cell.resp{display:none}
   .cortesias .row{grid-template-columns:1fr auto}
   .tabs button{padding:8px 10px;font-size:13.5px}
@@ -713,7 +736,7 @@ function telaCidade() {
   tela.appendChild(fl);
 
   const rh = el('div', 'rowhead');
-  ['Anúnc. Excl. Pagto', 'Empresa', 'Responsável', 'Valor', 'Vencto', 'WhatsApp'].forEach(t => rh.appendChild(el('div', '', t)));
+  ['Empresa', 'Responsável', 'Valor', 'Vencto', 'Anúncio · Exclusividade · Pagamento'].forEach(t => rh.appendChild(el('div', '', t)));
   tela.appendChild(rh);
 
   let l = cs.slice();
@@ -724,7 +747,6 @@ function telaCidade() {
   if (!l.length) lista.appendChild(el('div', 'empty', 'Nenhum cliente com esse filtro.'));
   l.forEach(c => {
     const r = el('div', 'row'); r.tabIndex = 0; r.setAttribute('role', 'button');
-    r.appendChild(marcadores(c));
     const n = el('div', 'nome', c.empresa);
     const ex = excs(c)[0];
     n.appendChild(el('small', '', [
@@ -735,32 +757,18 @@ function telaCidade() {
     r.appendChild(el('div', 'cell resp', c.responsavel || '—'));
     r.appendChild(el('div', 'cell r', c.valor ? money(c.valor) : '—'));
     r.appendChild(el('div', 'cell r', c.diaVenc ? 'dia ' + c.diaVenc : '—'));
-    const acoes = el('div', 'acoes');
-    const z1 = el('button', 'mini zap', '★');
-    z1.title = 'WhatsApp: informar exclusividade';
-    z1.onclick = e => { e.stopPropagation(); abrirExclusividade(c.id); };
-    const z2 = el('button', 'mini zap', '⟳');
-    z2.title = 'WhatsApp: convidar a atualizar o anúncio';
-    z2.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
-    acoes.append(z1, z2);
-    if (!eCortesia(c)) {
-      const z3 = el('button', 'mini zap', 'R$');
-      z3.title = 'WhatsApp: cobrar com a chave pix';
-      z3.onclick = e => { e.stopPropagation(); abrirCobranca(c.id); };
-      acoes.appendChild(z3);
-    }
-    r.appendChild(acoes);
+    r.appendChild(acoesLinha(c));
     r.onclick = () => abrirCliente(c.id);
     r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
     lista.appendChild(r);
   });
   tela.appendChild(lista);
   const lg = el('div', 'legend');
-  lg.innerHTML = '<span>Clique nas bolinhas para marcar: anúncio · exclusividade · pagamento</span>' +
+  lg.innerHTML = '<span>Clique em um botão para mandar mensagem ou marcar como feito</span>' +
     '<span><i style="background:var(--ok)"></i>feito neste mês</span>' +
     '<span><i style="background:var(--warn)"></i>pendente</span>' +
     '<span><i style="background:var(--bad)"></i>parado há muito tempo</span>' +
-    '<span>★ avisar exclusividade &nbsp;·&nbsp; ⟳ convidar a atualizar &nbsp;·&nbsp; R$ cobrar com pix</span>';
+    '<span><i></i>não se aplica</span>';
   tela.appendChild(lg);
 
   /* exclusividades registradas */
@@ -867,6 +875,64 @@ function novaDespesa() {
     });
     await salvar(); render();
   }, 'Lançar');
+}
+
+function acoesLinha(c) {
+  const g = el('div', 'acoes');
+  const st = leds(c);
+  const defs = [
+    { i: 0, rot: 'Anúncio', tipo: 'arte' },
+    { i: 1, rot: 'Exclus.', tipo: 'exclusividade' },
+    { i: 2, rot: 'Pagto', tipo: 'pagamento' }
+  ];
+  defs.forEach(d => {
+    const feito = st[d.i].s === 'on';
+    const inativo = eCortesia(c) || (d.tipo === 'pagamento' && !c.valor);
+    const b = el('button', 'pill ' + (inativo ? 'dead' : st[d.i].s || 'sem'));
+    b.appendChild(el('i', 'pdot'));
+    b.appendChild(el('span', '', d.rot));
+    b.title = st[d.i].t;
+    if (inativo) { b.disabled = true; g.appendChild(b); return; }
+    b.onclick = e => {
+      e.stopPropagation();
+      const itens = [];
+      if (d.tipo === 'arte') {
+        itens.push(['Convidar a atualizar (WhatsApp)', () => abrirConvite(c.id)]);
+        itens.push([feito ? 'Desfazer a troca deste mês' : 'Marcar anúncio trocado hoje', () => marcar(c.id, 'arte')]);
+      } else if (d.tipo === 'exclusividade') {
+        itens.push(['Marcar e avisar no WhatsApp', () => abrirExclusividade(c.id)]);
+        if (feito) itens.push(['Desfazer a exclusividade do mês', () => marcar(c.id, 'exclusividade')]);
+      } else {
+        itens.push(['Cobrar com a chave pix (WhatsApp)', () => abrirCobranca(c.id)]);
+        itens.push([feito ? 'Desfazer o pagamento do mês' : 'Registrar pagamento', () => marcar(c.id, 'pagamento')]);
+      }
+      itens.push(['Abrir cliente', () => abrirCliente(c.id)]);
+      menu(b, itens, c.empresa + ' · ' + st[d.i].t);
+    };
+    g.appendChild(b);
+  });
+  return g;
+}
+
+function menu(ancora, itens, titulo) {
+  document.querySelectorAll('.popover,.popbg').forEach(x => x.remove());
+  const bg = el('div', 'popbg');
+  const p = el('div', 'popover');
+  if (titulo) p.appendChild(el('div', 'poptit', titulo));
+  itens.forEach(([rot, fn]) => {
+    const b = el('button', 'popbt', rot);
+    b.onclick = () => { bg.remove(); p.remove(); fn(); };
+    p.appendChild(b);
+  });
+  document.body.append(bg, p);
+  const r = ancora.getBoundingClientRect();
+  const larg = 250;
+  p.style.width = larg + 'px';
+  p.style.left = Math.max(8, Math.min(r.right - larg, window.innerWidth - larg - 8)) + 'px';
+  const abaixo = r.bottom + 6;
+  if (abaixo + p.offsetHeight > window.innerHeight - 8) p.style.top = Math.max(8, r.top - p.offsetHeight - 6) + 'px';
+  else p.style.top = abaixo + 'px';
+  bg.onclick = () => { bg.remove(); p.remove(); };
 }
 
 function marcadores(c) {
