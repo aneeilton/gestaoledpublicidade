@@ -474,10 +474,11 @@ async function garantirZap(c) {
   });
 }
 function msgExclusividade(c, quando, ini, fim) {
-  return `Oi, *${primeiroNome(c)}*!\n` +
-    `Estamos passando para informar que *${quando}*, vamos pausar os outros anúncios para dar exclusividade apenas ao seu *${c.empresa}!*\n` +
-    `Das *${ini} às ${fim}*\n` +
-    `Led+ Publicidade. 🚀`;
+  return `Oi, *${primeiroNome(c)}*\n\n` +
+    `Estamos passando para informar que *${quando}*, vamos pausar os outros anúncios para dar exclusividade apenas ao seu *${c.empresa}*\n\n` +
+    `Das *${ini} às ${fim}* em todos os painéis!\n\n\n` +
+    `Att,\n` +
+    `LedPublicidade`;
 }
 function abrirExclusividade(id) {
   const c = DB.clientes.find(x => x.id === id);
@@ -506,11 +507,10 @@ async function abrirCobranca(id) {
   const c = DB.clientes.find(x => x.id === id);
   const num = await garantirZap(c);
   if (!num) return;
-  const msg = `Oi, *${primeiroNome(c)}*\n` +
-    `Tudo bom? \n\n` +
-    `Estamos passando pra deixar a chave pix referente o pagamento do mês atual\n` +
-    `${PIX}\n` +
-    `Led Publicidade\n\n` +
+  const msg = `Oi, *${primeiroNome(c)}* Tudo bom?\n\n` +
+    `Estamos passando pra deixar a chave pix referente o pagamento do mês atual\n\n` +
+    `${PIX} \n` +
+    `*Led Publicidade*\n\n` +
     `Obrigado!`;
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
