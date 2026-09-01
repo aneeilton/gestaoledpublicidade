@@ -163,6 +163,7 @@ async function carregar() {
   if (!j[0] || !j[0].dados || !j[0].dados.clientes) throw new Error('A base ainda está vazia');
   DB = j[0].dados;
   DB.despesas = DB.despesas || []; DB.atrasados = DB.atrasados || []; DB.prospects = DB.prospects || [];
+  DB.clientes.forEach(c => { if (!c.entrada) c.entrada = '2026-08'; });
   if (j[0].atualizado_em) {
     const d = new Date(j[0].atualizado_em);
     $('#atualizado').textContent = 'Atualizado em ' + d.toLocaleDateString('pt-BR') + ' às ' +
@@ -171,13 +172,14 @@ async function carregar() {
 }
 
 /* ---------- cálculos ---------- */
-const clientesDe = cid => DB.clientes.filter(c => c.conta === cid && c.ativo && c.tipo !== 'cortesia');
+const ativoNoMes = (c, ref) => (c.entrada || '0000-00') <= ref && (!c.saida || c.saida >= ref);
+const clientesDe = (cid, ref) => DB.clientes.filter(c => c.conta === cid && ativoNoMes(c, ref) && c.tipo !== 'cortesia');
 const evsMes = (tipo, ref, cid) => DB.eventos.filter(e => e.tipo === tipo &&
   (tipo === 'pagamento' ? (e.ref || e.data.slice(0, 7)) : e.data.slice(0, 7)) === ref &&
   (!cid || DB.clientes.some(c => c.id === e.cli && c.conta === cid)));
 
 function resumoCidade(cid, ref) {
-  const cs = clientesDe(cid);
+  const cs = clientesDe(cid, ref);
   const recebido = evsMes('pagamento', ref, cid).reduce((s, e) => s + (e.valor || 0), 0);
   const atrRec = DB.atrasados.filter(a => a.cidade === cid)
     .reduce((t, a) => t + (a.recebidos || []).filter(r => r.data.slice(0, 7) === ref).reduce((x, r) => x + r.valor, 0), 0);
@@ -188,7 +190,7 @@ function resumoCidade(cid, ref) {
   return {
     cid, cs, recebido, atrRec, desp, totDesp, contratada, pagos,
     receita: recebido + atrRec, saldo: recebido + atrRec - totDesp,
-    cortesias: DB.clientes.filter(c => c.conta === cid && c.ativo && c.tipo === 'cortesia').length,
+    cortesias: DB.clientes.filter(c => c.conta === cid && ativoNoMes(c, ref) && c.tipo === 'cortesia').length,
     devendo: DB.atrasados.filter(a => a.cidade === cid && a.saldo > 0),
     trocas: evsMes('arte', ref, cid).length,
     exclus: evsMes('exclusividade', ref, cid).length
@@ -263,6 +265,49 @@ function render() {
     c2.appendChild(linha('Entregas no mês', r.trocas + ' trocas · ' + r.exclus + ' exclusividades', 'desp'));
     cols.appendChild(c2);
 
+    card.appendChild(cols);
+    tela.appendChild(card);
+  });
+
+  /* ---- quem pagou e quem não pagou ---- */
+  tela.appendChild(cab('Pagamentos de ' + mesNome(mesRef), 'cliente a cliente, por cidade'));
+  R.forEach(r => {
+    const pagosIds = new Set(r.pagos.map(c => c.id));
+    const naoPagaram = r.cs.filter(c => !pagosIds.has(c.id));
+    const card = el('div', 'setor' + (r.cid === 'NOVA SOURE' ? ' ns' : ''));
+    card.appendChild(el('div', 'setor-top'));
+    const head = el('div', 'setor-head');
+    head.appendChild(el('h2', '', cidadeNome(r.cid)));
+    head.appendChild(el('p', '', r.pagos.length + ' pagaram · ' + naoPagaram.length + ' em aberto'));
+    card.appendChild(head);
+    const cols = el('div', 'setor-cols');
+
+    const c1 = el('div');
+    c1.appendChild(el('h4', '', 'Pagaram — ' + moneyC(r.recebido)));
+    if (!r.pagos.length) c1.appendChild(linha('Ninguém pagou neste mês', '', 'desp'));
+    r.pagos.slice().sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR')).forEach(c => {
+      const ev = DB.eventos.filter(e => e.cli === c.id && e.tipo === 'pagamento' &&
+        (e.ref || e.data.slice(0, 7)) === mesRef).sort((a, b) => b.data.localeCompare(a.data))[0];
+      const l = el('div', 'lin');
+      l.appendChild(el('span', '', c.empresa));
+      l.appendChild(el('span', 'tag on', ev && ev.data ? br(ev.data) : 'pago'));
+      l.appendChild(el('b', '', moneyC(ev ? ev.valor : 0)));
+      c1.appendChild(l);
+    });
+    cols.appendChild(c1);
+
+    const c2 = el('div');
+    const falta = naoPagaram.reduce((s2, c) => s2 + (c.valor || 0), 0);
+    c2.appendChild(el('h4', '', 'Não pagaram — ' + moneyC(falta)));
+    if (!naoPagaram.length) c2.appendChild(linha('Todos em dia neste mês', '', 'desp'));
+    naoPagaram.sort((a, b) => (b.valor || 0) - (a.valor || 0)).forEach(c => {
+      const l = el('div', 'lin');
+      l.appendChild(el('span', '', c.empresa));
+      if (c.diaVenc) l.appendChild(el('span', 'tag off', 'vence dia ' + c.diaVenc));
+      l.appendChild(el('b', '', c.valor ? moneyC(c.valor) : 'sem valor'));
+      c2.appendChild(l);
+    });
+    cols.appendChild(c2);
     card.appendChild(cols);
     tela.appendChild(card);
   });
