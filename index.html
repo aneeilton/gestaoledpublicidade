@@ -261,8 +261,8 @@ const SEED = {"clientes":[{"id":"c001","conta":"OLINDINA","tipo":"cortesia","emp
      alter table led_estado enable row level security;
      create policy "acesso total" on led_estado for all using (true) with check (true);
    ==================================================================== */
-const SUPABASE_URL = 'https://oxqrrebomtdzecxsfpip.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_1sohqR4OnESmTng3VL727w_Prvp8Zj4';
+const SUPABASE_URL = 'https://wpviywngfxfwydxzdtos.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IUPLIgkuW_JOTJIWGqdu5g_9jxiyh5W';
 const usaSupabase = () => !!(SUPABASE_URL && SUPABASE_KEY);
 
 const KEY = 'ledplus:carteira:v3';
@@ -367,7 +367,11 @@ async function carregar() {
     try {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?id=eq.1&select=dados`,
         { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
-      if (!r.ok) throw new Error(r.status + (r.status === 404 ? ' — tabela led_estado não encontrada' : r.status === 401 ? ' — chave recusada' : ''));
+      if (!r.ok) {
+        const t = await r.text();
+        throw new Error(r.status + (r.status === 404 ? ' — tabela led_estado não encontrada' :
+          r.status === 401 ? ' — chave recusada' : '') + ' ' + t.slice(0, 140));
+      }
       const j = await r.json();
       if (j && j[0] && j[0].dados && j[0].dados.clientes) { DB = j[0].dados; normalizar(); return; }
       DB = semear(); normalizar(); await salvar(); return;   // primeira carga: sobe a base para o banco
@@ -407,17 +411,25 @@ async function salvar() {
   if (memoriaSomente) { flag(false, 'Só nesta sessão'); return; }
   if (usaSupabase()) {
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?id=eq.1`, {
-        method: 'PATCH',
-        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dados: DB, atualizado_em: new Date().toISOString() })
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?on_conflict=id`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify({ id: 1, dados: DB, atualizado_em: new Date().toISOString() })
       });
-      if (!r.ok) throw new Error(r.status);
+      const txt = await r.text();
+      if (!r.ok) throw new Error(r.status + ' ' + txt.slice(0, 160));
+      let j = null; try { j = JSON.parse(txt); } catch (e) { }
+      if (!Array.isArray(j) || !j.length) throw new Error('a gravação não teve efeito — a policy da tabela led_estado está bloqueando');
+      $('#warn').innerHTML = '';
       flag(true, 'Salvo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } catch (e) {
-      flag(false, 'Falha ao salvar');
-      $('#warn').innerHTML = '<div class="warnbar">O Supabase recusou a gravação (' + esc(String(e.message)) +
-        '). Verifique a política de acesso da tabela led_estado.</div>';
+      flag(false, 'Não salvou');
+      $('#warn').innerHTML = '<div class="warnbar"><b>Os dados não foram gravados.</b> ' + esc(String(e.message)) +
+        '. Enquanto isso as alterações valem só nesta tela — não feche sem resolver.</div>';
     }
     return;
   }
@@ -1033,6 +1045,9 @@ function rodape() {
   const js = el('button', 'ghost', 'Baixar backup (JSON)'); js.onclick = () => baixar('carteira-led-' + hojeIso + '.json', JSON.stringify(DB, null, 1), 'application/json');
   const imp = el('button', 'ghost', 'Restaurar backup'); imp.onclick = () => $('#file').click();
   f.append(csv, js, imp);
+  if (usaSupabase()) {
+    const tt = el('button', 'ghost', 'Testar conexão'); tt.onclick = testarConexao; f.appendChild(tt);
+  }
   const inp = el('input'); inp.type = 'file'; inp.accept = '.json'; inp.id = 'file'; inp.style.display = 'none';
   inp.onchange = e => {
     const file = e.target.files[0]; if (!file) return;
@@ -1375,6 +1390,29 @@ function expCsv() {
   }
   const txt = [cab.join(';'), ...linhas.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
   baixar(nome + '-' + hojeIso + '.csv', '\uFEFF' + txt, 'text/csv');
+}
+
+async function testarConexao() {
+  const cab = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+  const passos = [];
+  try {
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?select=id`, { headers: cab });
+    const t1 = await r1.text();
+    passos.push(`Leitura: ${r1.status} ${r1.ok ? 'ok' : t1.slice(0, 120)}`);
+    if (r1.ok) passos.push(`Linhas visíveis: ${(JSON.parse(t1) || []).length}`);
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/led_estado?on_conflict=id`, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' }, cab),
+      body: JSON.stringify({ id: 1, dados: DB, atualizado_em: new Date().toISOString() })
+    });
+    const t2 = await r2.text();
+    const j2 = r2.ok ? JSON.parse(t2 || '[]') : [];
+    passos.push(`Gravação: ${r2.status} ${r2.ok ? (j2.length ? 'ok, linha gravada' : 'sem efeito — policy bloqueando') : t2.slice(0, 160)}`);
+  } catch (e) {
+    passos.push('Falha de rede: ' + e.message);
+    passos.push('Se estiver abrindo a página dentro do Claude, o acesso externo é bloqueado. Teste na Vercel ou no navegador.');
+  }
+  alert(passos.join('\n\n'));
 }
 
 /* ---------------- navegação ---------------- */
