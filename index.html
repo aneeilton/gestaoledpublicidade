@@ -145,7 +145,8 @@ input::placeholder{color:var(--muted-2)}
 .lin.tot.neg b{color:var(--bad)}
 .linx{background:none;border:0;color:var(--muted-2);font-size:12px;padding:0 0 0 6px}
 .linx:hover{color:var(--bad)}
-.row.prosp{grid-template-columns:1fr auto}
+.row.prosp,.row.enc{grid-template-columns:1fr auto}
+.row.enc{opacity:.8}
 .formlinha{display:flex;gap:8px;padding:14px;flex-wrap:wrap}
 .formlinha input{flex:1;min-width:150px}
 .formlinha .primary{width:auto;flex:none;padding:9px 18px}
@@ -283,7 +284,7 @@ const esc = s => (s == null ? '' : String(s)).replace(/[<>&"]/g, m => ({ '<': '&
 let DB = { clientes: [], eventos: [], atrasados: [] };
 let memoriaSomente = false;
 let aba = 'OLINDINA', filtro = null, busca = '', abertoId = null;
-let verCortesias = false;
+let verCortesias = false, verEncerrados = false;
 
 const hoje = () => new Date();
 const iso = d => d.toISOString().slice(0, 10);
@@ -709,29 +710,6 @@ function telaCidade() {
     ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
   ]));
 
-  /* cobranças e contato */
-  const itens = [];
-  cs.forEach(c => {
-    const p = statusPag(c);
-    if (p.s === 'off') itens.push({ c, p: 1, s: 'off', txt: `${money(c.valor)} — ${p.t}` });
-    else if (p.s === 'wait' && c.diaVenc && c.diaVenc - hoje().getDate() <= 3) itens.push({ c, p: 2, s: 'wait', txt: 'pagamento ' + p.t });
-  });
-  itens.sort((x, y) => x.p - y.p || x.c.empresa.localeCompare(y.c.empresa));
-  tela.appendChild(bloco('Pagamentos a receber', itens.length ? itens.length + ' pendências' : ''));
-  const box = el('div', 'box');
-  if (!itens.length) box.appendChild(el('div', 'empty', 'Nada pendente hoje.'));
-  itens.slice(0, 10).forEach(i => {
-    const b = el('button', 'todo');
-    b.appendChild(el('div', 'px ' + i.s));
-    b.appendChild(el('div', 'who', i.c.empresa));
-    b.appendChild(el('div', 'what', i.txt));
-    b.appendChild(el('div', 'when', i.c.responsavel || ''));
-    b.onclick = () => abrirCliente(i.c.id);
-    box.appendChild(b);
-  });
-  if (itens.length > 10) box.appendChild(el('div', 'empty', `+ ${itens.length - 10} na lista abaixo`));
-  tela.appendChild(box);
-
   /* lista */
   tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba)));
   const fl = el('div', 'filters');
@@ -846,6 +824,43 @@ function telaCidade() {
   bd.onclick = novaDespesa;
   rb.appendChild(bd);
   tela.appendChild(rb);
+
+  /* anúncios encerrados */
+  const encerrados = DB.clientes.filter(c => c.conta === aba && c.ativo === false);
+  tela.appendChild(bloco('Anúncios encerrados', encerrados.length + ' na base de ex-clientes',
+    [verEncerrados ? 'Ocultar' : 'Mostrar', () => { verEncerrados = !verEncerrados; render(); }]));
+  if (verEncerrados) {
+    const ex = el('div', 'box');
+    if (!encerrados.length) ex.appendChild(el('div', 'empty', 'Nenhum anúncio encerrado nesta cidade.'));
+    encerrados.sort((a, b) => (b.encerradoEm || '').localeCompare(a.encerradoEm || '')).forEach(c => {
+      const r = el('div', 'row enc');
+      const n = el('div', 'nome', c.empresa);
+      n.appendChild(el('small', '', [
+        c.responsavel || 'sem responsável',
+        c.encerradoEm ? 'encerrado em ' + br(c.encerradoEm) : '',
+        c.valor ? 'pagava ' + money(c.valor) : ''
+      ].filter(Boolean).join(' · ')));
+      r.appendChild(n);
+      const acoes = el('div', 'acoes');
+      const z = el('button', 'mini zap', '✆'); z.title = 'Abrir conversa no WhatsApp';
+      z.onclick = async e => {
+        e.stopPropagation();
+        const num = await garantirZap(c);
+        if (num) window.open(`https://wa.me/${num}`, '_blank');
+      };
+      const v = el('button', 'mini', '↩'); v.title = 'Reativar como cliente em ' + mesNome(mesRef);
+      v.onclick = async e => {
+        e.stopPropagation();
+        if (!confirm(`Reativar ${c.empresa} como cliente a partir de ${mesNome(mesRef)}?`)) return;
+        c.ativo = true; delete c.saida; c.entrada = mesRef; delete c.encerradoEm;
+        await salvar(); render(); abrirCliente(c.id);
+      };
+      acoes.append(z, v); r.appendChild(acoes);
+      r.onclick = () => abrirCliente(c.id);
+      ex.appendChild(r);
+    });
+    tela.appendChild(ex);
+  }
 
   /* cortesias */
   tela.appendChild(bloco('Cortesias', cort.length + ' sem cobrança', [verCortesias ? 'Ocultar' : 'Mostrar', () => { verCortesias = !verCortesias; render(); }]));
@@ -1113,7 +1128,7 @@ function abrirCliente(id) {
       <button data-del="${e.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhum registro ainda.</div>'}</div>
 
     <div class="foot" style="margin-top:22px">
-      <button class="ghost" id="inativar">${c.ativo ? 'Marcar como encerrado' : 'Reativar cliente'}</button>
+      <button class="ghost" id="inativar">${c.ativo ? 'Encerrar anúncio' : 'Reativar como cliente'}</button>
       <button class="ghost" id="paraAtraso">Mandar para atrasados</button>
     </div>
   </div>`;
@@ -1131,8 +1146,12 @@ function abrirCliente(id) {
   $('#fechar').onclick = fechar;
   $('#salvar').onclick = () => salvarCadastro(id);
   $('#inativar').onclick = async () => {
-    c.ativo = !c.ativo;
-    if (!c.ativo) c.saida = mesHoje; else delete c.saida;
+    if (c.ativo) {
+      if (!confirm(`Encerrar o anúncio de ${c.empresa}? Ele sai da lista deste mês e dos próximos, e vai para "Anúncios encerrados".`)) return;
+      c.ativo = false; c.saida = somaMes(mesRef, -1); c.encerradoEm = hojeIso;
+    } else {
+      c.ativo = true; delete c.saida; c.entrada = mesRef; delete c.encerradoEm;
+    }
     await salvar(); fechar(); render();
   };
   $('#paraAtraso').onclick = () => modal(`Mandar ${c.empresa} para atrasados`, [
@@ -1419,7 +1438,7 @@ async function testarConexao() {
 function marcarAba() { [...$('#tabs').children].forEach(x => x.classList.toggle('on', x.dataset.aba === aba)); }
 $('#tabs').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  aba = b.dataset.aba; filtro = null; busca = ''; verCortesias = false;
+  aba = b.dataset.aba; filtro = null; busca = ''; verCortesias = verEncerrados = false;
   marcarAba(); render();
 };
 $('#scrim').onclick = fechar;
