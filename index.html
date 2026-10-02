@@ -549,7 +549,8 @@ function refsEmAberto(c) {
   let r = c.entrada || '2026-08';
   const limite = c.saida && c.saida < mesHoje ? c.saida : mesHoje;
   while (r <= limite) {
-    const pago = DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === r);
+    const pago = DB.eventos.some(e => e.cli === c.id && (e.tipo === 'pagamento' || e.tipo === 'ajuste') &&
+      (e.ref || e.data.slice(0, 7)) === r);
     const venceu = r < mesHoje || (c.diaVenc && hoje().getDate() > c.diaVenc);
     if (!pago && venceu) out.push(r);
     r = somaMes(r, 1);
@@ -587,9 +588,12 @@ function statusArte(c) {
   return { s: 'off', t: `anúncio no ar há ${d} d` };
 }
 const pagoNoMes = c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === mesRef);
+const dispensado = (c, ref) => DB.eventos.find(e => e.cli === c.id && e.tipo === 'ajuste' && (e.ref || '') === (ref || mesRef));
 function statusPag(c) {
   if (eCortesia(c) || !c.valor) return { s: '', t: eCortesia(c) ? 'cortesia — sem cobrança' : 'sem valor definido' };
   if (pagoNoMes(c)) return { s: 'on', t: 'pago em ' + mesNome(mesRef) };
+  const dp = dispensado(c);
+  if (dp) return { s: '', t: 'mês dispensado' + (dp.nota ? ': ' + dp.nota : '') };
   if (mesRef < mesHoje) return { s: 'off', t: 'não pagou em ' + mesNome(mesRef) };
   if (mesRef > mesHoje) return { s: 'wait', t: 'mês ainda não começou' };
   if (!c.diaVenc) return { s: 'wait', t: 'sem dia de pagamento' };
@@ -1210,6 +1214,9 @@ function telaAtrasados() {
       const rb = el('button', 'mini', '✓'); rb.title = 'Registrar recebimento';
       rb.onclick = e => { e.stopPropagation(); receberAtraso(x); };
       acoes.appendChild(rb);
+      const db = el('button', 'mini', '⊘'); db.title = 'Baixar sem receber (ajuste)';
+      db.onclick = e => { e.stopPropagation(); dispensarAtraso(x); };
+      acoes.appendChild(db);
     } else {
       const vb = el('button', 'mini', '⇄'); vb.title = 'Vincular a um cliente da base';
       vb.onclick = e => { e.stopPropagation(); vincularAvulso(x.a); };
@@ -1217,6 +1224,9 @@ function telaAtrasados() {
       const rb = el('button', 'mini', '✓'); rb.title = 'Registrar recebimento';
       rb.onclick = e => { e.stopPropagation(); abrirAtrasado(x.a.id); };
       acoes.appendChild(rb);
+      const db = el('button', 'mini', '⊘'); db.title = 'Baixar sem receber (ajuste)';
+      db.onclick = e => { e.stopPropagation(); dispensarAtraso(x); };
+      acoes.appendChild(db);
     }
     r.appendChild(acoes);
     r.onclick = () => x.tipo === 'cliente' ? abrirCliente(x.c.id) : abrirAtrasado(x.a.id);
@@ -1225,7 +1235,7 @@ function telaAtrasados() {
   tela.appendChild(box);
   const lg = el('div', 'legend');
   lg.innerHTML = '<span>Os meses em aberto são calculados sozinhos: mês sem pagamento lançado vira dívida aqui.</span>' +
-    '<span>R$ cobrar no WhatsApp · ✓ registrar recebimento · ⇄ vincular à base</span>';
+    '<span>R$ cobrar no WhatsApp · ✓ registrar recebimento · ⊘ baixar sem receber · ⇄ vincular à base</span>';
   tela.appendChild(lg);
 
   /* o que já foi recebido de atrasados neste mês */
@@ -1276,6 +1286,39 @@ function receberAtraso(x) {
     }
     await salvar(); render();
   }, 'Registrar');
+}
+
+/* tira da cobrança sem lançar dinheiro: acordo, erro de cadastro, dívida perdida */
+function dispensarAtraso(x) {
+  const opcoes = [];
+  if (x.tipo === 'cliente') {
+    x.refs.forEach(r => opcoes.push([r, mesNome(r) + ' — ' + money(x.c.valor)]));
+    if (x.refs.length > 1) opcoes.unshift(['todos', 'Todos os ' + x.refs.length + ' meses em aberto']);
+    x.avulsos.forEach(a => opcoes.push(['avulso:' + a.id, 'Dívida anterior — ' + money(a.saldo)]));
+  } else {
+    opcoes.push(['avulso:' + x.a.id, 'Dívida de ' + money(x.a.saldo)]);
+  }
+  if (!opcoes.length) return;
+  modal(`Baixar sem receber — ${x.nome}`, [
+    { id: 'alvo', tipo: 'select', rot: 'O que sai da cobrança', valor: opcoes[0][0], opcoes },
+    { id: 'motivo', tipo: 'select', rot: 'Motivo', valor: 'Acordo comercial', opcoes: [
+      ['Acordo comercial', 'Acordo comercial'], ['Permuta / troca', 'Permuta / troca'],
+      ['Cortesia pontual', 'Cortesia pontual'], ['Erro de lançamento', 'Erro de lançamento'],
+      ['Dívida considerada perdida', 'Dívida considerada perdida'], ['Mês sem anúncio no ar', 'Mês sem anúncio no ar']
+    ] },
+    { id: 'nota', rot: 'Detalhe (opcional)', valor: '' }
+  ], async v => {
+    const texto = v.motivo + (v.nota.trim() ? ' — ' + v.nota.trim() : '');
+    if (String(v.alvo).startsWith('avulso:')) {
+      const a = DB.atrasados.find(y => y.id === v.alvo.slice(7));
+      a.saldo = 0; a.baixa = { data: hojeIso, motivo: texto };
+      a.obs = (a.obs ? a.obs + ' | ' : '') + 'baixado sem recebimento em ' + br(hojeIso) + ': ' + texto;
+    } else {
+      const refs = v.alvo === 'todos' ? x.refs : [v.alvo];
+      refs.forEach(r => DB.eventos.push({ id: uid(), cli: x.c.id, tipo: 'ajuste', data: hojeIso, ref: r, nota: texto }));
+    }
+    await salvar(); render();
+  }, 'Baixar');
 }
 
 function vincularAvulso(a) {
@@ -1365,8 +1408,8 @@ function abrirCliente(id) {
     <div class="subhead">Histórico (${evs.length})</div>
     <div class="hist">${evs.length ? evs.map(e => `
       <div><time>${br(e.data)}${e.hora ? ' ' + e.hora : ''}</time>
-      <b>${e.tipo === 'pagamento' ? 'pagto' : e.tipo === 'exclusividade' ? 'exclus.' : e.tipo === 'arte' ? 'anúncio' : e.tipo}</b>
-      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${esc(e.nota || '')}</s>
+      <b>${e.tipo === 'pagamento' ? 'pagto' : e.tipo === 'exclusividade' ? 'exclus.' : e.tipo === 'arte' ? 'anúncio' : e.tipo === 'ajuste' ? 'dispensa' : e.tipo}</b>
+      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${e.tipo === 'ajuste' && e.ref ? 'ref ' + mesNome(e.ref) + ' · ' : ''}${esc(e.nota || '')}</s>
       <button data-del="${e.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhum registro ainda.</div>'}</div>
 
     <div class="foot" style="margin-top:22px">

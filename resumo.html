@@ -234,8 +234,9 @@ function resumoCidade(cid, ref) {
   const totDesp = desp.reduce((t, d) => t + d.valor, 0);
   const contratada = cs.reduce((s, c) => s + (c.valor || 0), 0);
   const pagos = cs.filter(c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'pagamento' && (e.ref || e.data.slice(0, 7)) === ref));
+  const dispensados = cs.filter(c => DB.eventos.some(e => e.cli === c.id && e.tipo === 'ajuste' && (e.ref || '') === ref));
   return {
-    cid, cs, recebido, atrRec, quitacoes, desp, totDesp, contratada, pagos,
+    cid, cs, recebido, atrRec, quitacoes, desp, totDesp, contratada, pagos, dispensados,
     receita: recebido + atrRec, saldo: recebido + atrRec - totDesp,
     cortesias: DB.clientes.filter(c => c.conta === cid && ativoNoMes(c, ref) && c.tipo === 'cortesia').length,
     devendo: DB.atrasados.filter(a => a.cidade === cid && a.saldo > 0),
@@ -295,8 +296,6 @@ function render() {
     c1.appendChild(el('h4', '', 'Composição do mês'));
     c1.appendChild(linha('Mensalidades recebidas', moneyC(r.recebido)));
     c1.appendChild(linha('Recebido de atrasados', moneyC(r.atrRec)));
-    r.quitacoes.forEach(q => c1.appendChild(linha('   ' + q.nome + (q.comp ? ' · ref ' + mesNome(q.comp) : ' · dívida anterior'),
-      moneyC(q.valor), 'desp')));
     r.desp.slice().sort((a, b) => (a.data || '').localeCompare(b.data || ''))
       .forEach(d => c1.appendChild(linha((d.data ? br(d.data) + '  ' : '') + d.nome, '− ' + moneyC(d.valor), 'desp')));
     if (!r.desp.length) c1.appendChild(linha('Sem despesas lançadas', '—', 'desp'));
@@ -322,12 +321,14 @@ function render() {
   tela.appendChild(cab('Pagamentos de ' + mesNome(mesRef), 'cliente a cliente, por cidade'));
   R.forEach(r => {
     const pagosIds = new Set(r.pagos.map(c => c.id));
-    const naoPagaram = r.cs.filter(c => !pagosIds.has(c.id));
+    const dispIds = new Set(r.dispensados.map(c => c.id));
+    const naoPagaram = r.cs.filter(c => !pagosIds.has(c.id) && !dispIds.has(c.id));
     const card = el('div', 'setor' + (r.cid === 'NOVA SOURE' ? ' ns' : ''));
     card.appendChild(el('div', 'setor-top'));
     const head = el('div', 'setor-head');
     head.appendChild(el('h2', '', cidadeNome(r.cid)));
-    head.appendChild(el('p', '', r.pagos.length + ' pagaram · ' + naoPagaram.length + ' em aberto'));
+    head.appendChild(el('p', '', r.pagos.length + ' pagaram · ' + naoPagaram.length + ' em aberto' +
+      (r.dispensados.length ? ' · ' + r.dispensados.length + ' dispensados' : '')));
     card.appendChild(head);
     const cols = el('div', 'setor-cols');
 
@@ -354,6 +355,14 @@ function render() {
       l.appendChild(el('span', '', c.empresa));
       if (c.diaVenc) l.appendChild(el('span', 'tag off', 'vence dia ' + c.diaVenc));
       l.appendChild(el('b', '', c.valor ? moneyC(c.valor) : 'sem valor'));
+      c2.appendChild(l);
+    });
+    r.dispensados.forEach(c => {
+      const ev = DB.eventos.find(e => e.cli === c.id && e.tipo === 'ajuste' && (e.ref || '') === mesRef);
+      const l = el('div', 'lin desp');
+      l.appendChild(el('span', '', c.empresa));
+      l.appendChild(el('span', 'tag', 'dispensado' + (ev && ev.nota ? ' · ' + ev.nota.split(' — ')[0] : '')));
+      l.appendChild(el('b', '', '—'));
       c2.appendChild(l);
     });
     cols.appendChild(c2);
