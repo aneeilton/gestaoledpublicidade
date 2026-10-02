@@ -1415,6 +1415,7 @@ function abrirCliente(id) {
     <div class="foot" style="margin-top:22px">
       <button class="ghost" id="inativar">${c.ativo ? 'Encerrar anúncio' : 'Reativar como cliente'}</button>
       <button class="ghost" id="paraAtraso">Mandar para atrasados</button>
+      <button class="ghost" id="excluir" style="color:var(--bad);border-color:var(--bad)">Excluir definitivamente</button>
     </div>
   </div>`;
   abrirSheet();
@@ -1437,6 +1438,21 @@ function abrirCliente(id) {
     } else {
       c.ativo = true; delete c.saida; c.entrada = mesRef; delete c.encerradoEm;
     }
+    await salvar(); fechar(); render();
+  };
+  $('#excluir').onclick = async () => {
+    const evs = evsDe(id).length;
+    const divs = DB.atrasados.filter(a => a.cli === id);
+    const pagos = evsDe(id).filter(e => e.tipo === 'pagamento').reduce((s2, e) => s2 + (e.valor || 0), 0);
+    if (!confirm(`Apagar ${c.empresa} de vez?\n\n` +
+      `Somem: o cadastro, ${evs} registro(s) de histórico` +
+      (pagos ? `, incluindo ${money(pagos)} já recebidos` : '') +
+      (divs.length ? `, e ${divs.length} dívida(s) vinculada(s)` : '') +
+      `.\n\nOs meses passados passam a mostrar a carteira sem esse cliente. Não dá para desfazer.`)) return;
+    if (!confirm(`Confirma apagar ${c.empresa}? Se quiser só tirar da lista mantendo o histórico, use "Encerrar anúncio".`)) return;
+    DB.clientes = DB.clientes.filter(x => x.id !== id);
+    DB.eventos = DB.eventos.filter(e => e.cli !== id);
+    DB.atrasados = DB.atrasados.filter(a => a.cli !== id);
     await salvar(); fechar(); render();
   };
   $('#paraAtraso').onclick = () => modal(`Mandar ${c.empresa} para atrasados`, [
