@@ -310,7 +310,6 @@ function render() {
     c2.appendChild(linha(r.saldo < 0 ? 'Prejuízo dividido na mesma proporção' : 'Calculado só sobre o resultado desta cidade', '', 'desp'));
     c2.appendChild(linha('Em cobrança nesta cidade',
       moneyC(r.devendo.reduce((s2, a) => s2 + a.saldo, 0)) + ' · ' + r.devendo.length + ' devedores', 'desp'));
-    c2.appendChild(linha('Entregas no mês', r.trocas + ' trocas · ' + r.exclus + ' exclusividades', 'desp'));
     cols.appendChild(c2);
 
     card.appendChild(cols);
@@ -440,21 +439,6 @@ function render() {
   });
   tela.appendChild(ing);
 
-  /* ---- operação ---- */
-  tela.appendChild(cab('Operação do mês', 'entrega e relacionamento, por cidade'));
-  const op = el('div', 'box');
-  const to = el('table', 'tab');
-  to.innerHTML = '<tr><th>Cidade</th><th class="r">Anúncios trocados</th><th class="r">Exclusividades</th><th class="r">Contatos</th></tr>';
-  R.forEach(r => {
-    const tr = el('tr');
-    tr.appendChild(el('td', '', cidadeNome(r.cid)));
-    tr.appendChild(el('td', 'r', r.trocas + ' de ' + r.cs.length + ' (' + pct(r.trocas, r.cs.length) + '%)'));
-    tr.appendChild(el('td', 'r', String(r.exclus)));
-    tr.appendChild(el('td', 'r', String(evsMes('contato', mesRef, r.cid).length)));
-    to.appendChild(tr);
-  });
-  op.appendChild(to); tela.appendChild(op);
-
   /* ---- links de conferência ---- */
   tela.appendChild(cab('Links para conferência', 'confronte estes números com as fontes originais'));
   const lk = el('div', 'box');
@@ -477,7 +461,6 @@ function render() {
 
   tela.appendChild(el('div', 'aviso', 'Cada cidade é fechada por si: receita, despesa, saldo e rateio nunca se misturam. ' +
     'Olindina divide 50% para cada sócio; Nova Soure divide 75% Ramon e 25% Anai. ' +
-    'Prospecção em aberto: ' + DB.prospects.length + ' contatos (lista única, sem separação por cidade). ' +
     'Página só de leitura — mostra o que foi lançado na gestão da carteira.'));
 }
 
