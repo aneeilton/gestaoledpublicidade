@@ -105,22 +105,21 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;color:inherit}
 .tag.on{color:var(--ok);background:var(--ok-soft)} .tag.off{color:var(--warn);background:var(--warn-soft)}
 .mini-bar{height:6px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:6px}
 .mini-bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
-.evo{display:flex;align-items:flex-end;gap:14px;padding:18px 16px 10px;min-height:150px}
-.evocol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
-.evobars{display:flex;align-items:flex-end;gap:3px;height:110px}
-.evobars i{width:16px;border-radius:4px 4px 0 0;display:block}
-.evolab{font-size:11.5px;color:var(--muted)}
-.legb{display:flex;gap:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
-.legb i{width:8px;height:8px;border-radius:3px;display:inline-block;margin-right:6px}
+
+
+
+
+
+
+
 .empty{padding:18px;color:var(--muted);font-size:13.5px}
 
-.linklin{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);
-  font-size:13.5px;color:var(--text);text-decoration:none;font-weight:500}
-.linklin:last-child{border-bottom:0}
-a.linklin:hover{background:var(--accent-soft);color:var(--accent-ink)}
-.linklin em{font-style:normal;font-size:12px;color:var(--muted-2);font-weight:400}
-.linklin b{margin-left:auto;color:var(--accent);font-weight:500}
-.linklin.vazio{color:var(--muted-2)}
+
+
+
+
+
+
 .aviso{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;
   font-size:12.5px;color:var(--muted);margin-top:22px;line-height:1.6}
 .rodape{text-align:center;font-size:12px;color:var(--muted-2);margin-top:30px}
@@ -133,7 +132,6 @@ a.linklin:hover{background:var(--accent-soft);color:var(--accent-ink)}
   .setor-cols{grid-template-columns:1fr}
   .setor-cols>div:first-child{border-right:0;border-bottom:1px solid var(--line)}
   .setor-head p{margin-left:0;width:100%}
-  .evobars i{width:11px}
   .appbar-in{height:58px}
 }
 </style>
@@ -158,13 +156,6 @@ const SUPABASE_KEY = 'sb_publishable_IUPLIgkuW_JOTJIWGqdu5g_9jxiyh5W';
 const DIVISAO = { 'OLINDINA': [['Ramon', 50], ['Anai', 50]], 'NOVA SOURE': [['Ramon', 75], ['Anai', 25]] };
 const CIDADES = ['OLINDINA', 'NOVA SOURE'];
 
-/* Links de conferência exibidos no fim da página.
-   Cole o endereço de cada um entre as aspas; os que ficarem vazios aparecem
-   como pendentes e não viram link. */
-const LINKS = [
-  { nome: 'Extrato da conta', url: 'https://drive.google.com/drive/folders/1KqT4oXvWbkZFBTLRXiSx3H1xccimNN7v', obs: 'pasta no Drive' },
-  { nome: 'Comprovante despesas', url: 'https://drive.google.com/drive/folders/1MXNRM7NOoR0G4g3b9wDkX9nwG9kHvEFg', obs: 'pasta no Drive' }
-];
 
 const $ = s => document.querySelector(s);
 const el = (t, c, txt) => { const n = document.createElement(t); if (c) n.className = c; if (txt != null) n.textContent = txt; return n; };
@@ -383,35 +374,6 @@ function render() {
     tela.appendChild(card);
   });
 
-  /* ---- evolução, uma cidade por bloco ---- */
-  const meses = []; for (let k = 5; k >= 0; k--) meses.push(somaMes(mesRef, -k));
-  tela.appendChild(cab('Evolução dos últimos 6 meses', 'saldo mês a mês, cada cidade por si'));
-  const evg = el('div', 'duas');
-  CIDADES.forEach((cid, ci) => {
-    const vals = meses.map(m => resumoCidade(cid, m).saldo);
-    const maxv = Math.max(1, ...vals.map(Math.abs));
-    const bx = el('div', 'box cidade');
-    const h = el('h3', '', cidadeNome(cid));
-    h.appendChild(el('em', '', 'melhor ' + moneyC(Math.max(...vals))));
-    bx.appendChild(h);
-    const linhaEv = el('div', 'evo'); linhaEv.style.padding = '10px 0 0';
-    meses.forEach((m, k) => {
-      const col = el('div', 'evocol');
-      const bars = el('div', 'evobars');
-      const i = el('i');
-      i.style.height = Math.max(2, Math.abs(vals[k]) / maxv * 105) + 'px';
-      i.style.width = '26px';
-      i.style.background = vals[k] < 0 ? 'var(--bad)' : (ci === 0 ? 'var(--accent)' : 'var(--accent-2)');
-      i.title = mesNome(m) + ' · ' + moneyC(vals[k]);
-      bars.appendChild(i); col.appendChild(bars);
-      col.appendChild(el('div', 'evolab', mesNome(m)));
-      linhaEv.appendChild(col);
-    });
-    bx.appendChild(linhaEv);
-    evg.appendChild(bx);
-  });
-  tela.appendChild(evg);
-
   /* ---- inadimplência separada ---- */
   tela.appendChild(cab('Inadimplência', 'cobranças de meses anteriores'));
   const ing = el('div', 'duas');
@@ -438,26 +400,6 @@ function render() {
     ing.appendChild(bx);
   });
   tela.appendChild(ing);
-
-  /* ---- links de conferência ---- */
-  tela.appendChild(cab('Links para conferência', 'confronte estes números com as fontes originais'));
-  const lk = el('div', 'box');
-  LINKS.forEach(l => {
-    if (l.url) {
-      const a = el('a', 'linklin');
-      a.href = l.url; a.target = '_blank'; a.rel = 'noopener';
-      a.appendChild(el('span', '', l.nome));
-      if (l.obs) a.appendChild(el('em', '', l.obs));
-      a.appendChild(el('b', '', '↗'));
-      lk.appendChild(a);
-    } else {
-      const d = el('div', 'linklin vazio');
-      d.appendChild(el('span', '', l.nome));
-      d.appendChild(el('em', '', 'endereço ainda não cadastrado'));
-      lk.appendChild(d);
-    }
-  });
-  tela.appendChild(lk);
 
   tela.appendChild(el('div', 'aviso', 'Cada cidade é fechada por si: receita, despesa, saldo e rateio nunca se misturam. ' +
     'Olindina divide 50% para cada sócio; Nova Soure divide 75% Ramon e 25% Anai. ' +
