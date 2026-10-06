@@ -167,6 +167,7 @@ input::placeholder{color:var(--muted-2)}
 /* linhas alternativas */
 .row.prosp,.row.enc{grid-template-columns:1fr auto}
 .row.atr{grid-template-columns:1fr 110px 96px}
+.row.chip{grid-template-columns:1fr auto auto}
 .row.enc{opacity:.85}
 .cortesias .row{grid-template-columns:1fr 140px 96px}
 
@@ -323,6 +324,7 @@ label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-w
     <button data-aba="OLINDINA" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Olindina</span></button>
     <button data-aba="NOVA SOURE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M7 9h10M7 12.5h6"/></svg><span>Nova Soure</span></button>
     <button data-aba="ATRASADOS"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Atrasados</span><em id="tabatr"></em></button>
+    <button data-aba="PAINEIS"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 15.5a5.5 5.5 0 0 1 7 0"/><circle cx="12" cy="18.5" r="1.3"/><path d="M2 9.5a15 15 0 0 1 20 0"/></svg><span>Painéis</span></button>
     <button data-aba="PROSPECCAO"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M18 8h4M20 6v4"/></svg><span>Prospecção</span></button>
   </nav>
   <div class="mesref" id="mesref"></div>
@@ -336,6 +338,21 @@ label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-w
 <aside class="sheet" id="sheet" aria-hidden="true"></aside>
 
 <script>
+
+const SEED_CHIPS = [
+ {id:'ch01', local:'HOUSEFIT',   painel:'Academia',   numero:'75 9 82344635', cpf:'076.669.815-70', titular:'Adeilton Borges',        plano:'CONTROLE', venc:10, iccid:'89550534760001544792', wifi:'IPHONE XR', senha:'.0800.',     roteador:'', obs:''},
+ {id:'ch02', local:'LED',        painel:'LED',        numero:'75 9 99080139', cpf:'057.951.715-22', titular:'Aneilton Borges',        plano:'PRE',      venc:16, iccid:'',                     wifi:'Esim',      senha:'',           roteador:'', obs:''},
+ {id:'ch03', local:'OLINDINA',   painel:'Lirio',      numero:'75 9 81656366', cpf:'017.592.825-88', titular:'Luiz Ramon Silva de Souza', plano:'PRE',   venc:null, iccid:'89550534760000260523', wifi:'SN2008@+', senha:'',           roteador:'', obs:''},
+ {id:'ch04', local:'OLINDINA',   painel:'Butchers',   numero:'75 9 81205598', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'PRE',     venc:17, iccid:'89550534760000260515', wifi:'SN2008@+',  senha:'',           roteador:'', obs:''},
+ {id:'ch05', local:'OLINDINA',   painel:'Geraldo',    numero:'75 9 81640367', cpf:'017.592.825-88', titular:'Luiz Ramon Silva de Souza', plano:'PRE',   venc:null, iccid:'89550534760000260879', wifi:'76728175', senha:'',           roteador:'', obs:''},
+ {id:'ch06', local:'OLINDINA',   painel:'Passos',     numero:'75 9 81209069', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'PRE',     venc:15, iccid:'89550534760000261158', wifi:'SN2008@+',  senha:'',           roteador:'', obs:''},
+ {id:'ch07', local:'OLINDINA',   painel:'Trailer',    numero:'75 9 81458367', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'PRE',     venc:null, iccid:'89550534760000261133', wifi:'SN2008@+', senha:'',           roteador:'', obs:''},
+ {id:'ch08', local:'OLINDINA',   painel:'Rodoviária', numero:'75 9 81249009', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'PRE',     venc:null, iccid:'89550534760001544677', wifi:'SN2008@+', senha:'',           roteador:'', obs:'chip comigo'},
+ {id:'ch09', local:'NOVA SOURE', painel:'Painel 1',   numero:'75 9 82300749', cpf:'076.669.815-72', titular:'Adeilton Borges',        plano:'PRE',      venc:10, iccid:'',                     wifi:'',          senha:'',           roteador:'', obs:'conferir o número'},
+ {id:'ch10', local:'NOVA SOURE', painel:'Painel 2',   numero:'75 9 81205548', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'CONTROLE', venc:10, iccid:'',                    wifi:'Soure5428', senha:'TIM9EC8D9AB', roteador:'3P5a2Y8s / admin', obs:''},
+ {id:'ch11', local:'NOVA SOURE', painel:'Painel 6',   numero:'75 9 81209067', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'CONTROLE', venc:10, iccid:'',                    wifi:'Soure5428', senha:'TIM9EC8DDEF', roteador:'9UVE2d9h / admin', obs:'Apoteose'},
+ {id:'ch12', local:'NOVA SOURE', painel:'Painel 4',   numero:'75 9 81842992', cpf:'057.951.715-22', titular:'Aneilton Borges Almeida', plano:'CONTROLE', venc:10, iccid:'',                    wifi:'Soure5428', senha:'TIM9EA76F2A', roteador:'3L8z5523 / admin', obs:''}
+];
 const SEED = {"clientes":[{"id":"c001","conta":"OLINDINA","tipo":"cortesia","empresa":"Amanda da Honda","responsavel":"Amana","telefone":"","cod":"a1","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c002","conta":"OLINDINA","tipo":"cortesia","empresa":"RR Ginchos","responsavel":"Ramon","telefone":"","cod":"a2","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c003","conta":"OLINDINA","tipo":"cortesia","empresa":"Pias Lobo","responsavel":"Ramon","telefone":"","cod":"a3","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c004","conta":"OLINDINA","tipo":"cortesia","empresa":"House Fit","responsavel":"Ramon","telefone":"","cod":"a4","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c005","conta":"OLINDINA","tipo":"cortesia","empresa":"Elite Sat","responsavel":"Adeilton","telefone":"","cod":"a5","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c006","conta":"OLINDINA","tipo":"cortesia","empresa":"Tomazia","responsavel":"Tomazia","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c007","conta":"OLINDINA","tipo":"cortesia","empresa":"Karine","responsavel":"Karine","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c008","conta":"OLINDINA","tipo":"cortesia","empresa":"Dafne","responsavel":"Dafne","telefone":"","cod":"","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c009","conta":"OLINDINA","tipo":"cliente","empresa":"J Andrade","responsavel":"Rodrigo","telefone":"","cod":"1","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"pago mês passado a mais","ativo":true,"entrada":"2026-08"},{"id":"c010","conta":"OLINDINA","tipo":"cliente","empresa":"Odonto Matos - 15","responsavel":"Lohara","telefone":"","cod":"2","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c011","conta":"OLINDINA","tipo":"cliente","empresa":"FCK Cnfrar","responsavel":"Abner","telefone":"","cod":"3","valor":399.0,"diaVenc":2,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c012","conta":"OLINDINA","tipo":"cliente","empresa":"IOL","responsavel":"Wendell","telefone":"","cod":"4","valor":400.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c013","conta":"OLINDINA","tipo":"cliente","empresa":"Protege","responsavel":"Abel","telefone":"","cod":"5","valor":399.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c014","conta":"OLINDINA","tipo":"cliente","empresa":"Dmelo Energia Solar","responsavel":"Bob","telefone":"","cod":"6","valor":300.0,"diaVenc":5,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c015","conta":"OLINDINA","tipo":"cliente","empresa":"Empório","responsavel":"Renata","telefone":"","cod":"7","valor":199.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c016","conta":"OLINDINA","tipo":"cliente","empresa":"Posto Natuba","responsavel":"Abílio","telefone":"","cod":"8","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c017","conta":"OLINDINA","tipo":"cliente","empresa":"Gbarbosa","responsavel":"Jane","telefone":"","cod":"9","valor":299.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c018","conta":"OLINDINA","tipo":"cliente","empresa":"Hortifruti","responsavel":"Jeffinho","telefone":"","cod":"10","valor":189.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"vencimento: 10 de cada mês","ativo":true,"entrada":"2026-08"},{"id":"c019","conta":"OLINDINA","tipo":"cliente","empresa":"Agro Saty","responsavel":"Menininha","telefone":"","cod":"11","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c020","conta":"OLINDINA","tipo":"cliente","empresa":"Passos Nobre","responsavel":"Franci","telefone":"","cod":"12","valor":289.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c021","conta":"OLINDINA","tipo":"cliente","empresa":"Ótica Olisan","responsavel":"Leidinalva","telefone":"","cod":"13","valor":270.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c022","conta":"OLINDINA","tipo":"cliente","empresa":"Pontual Contabilidade - 15","responsavel":"Déborah","telefone":"","cod":"14","valor":269.0,"diaVenc":15,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c023","conta":"OLINDINA","tipo":"cliente","empresa":"CR Fibra","responsavel":"Ciderlon","telefone":"","cod":"15","valor":249.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c024","conta":"OLINDINA","tipo":"cliente","empresa":"PP Pizzaria","responsavel":"Pepê","telefone":"","cod":"16","valor":239.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c025","conta":"OLINDINA","tipo":"cliente","empresa":"Drogaria Almeida","responsavel":"Júninho","telefone":"","cod":"17","valor":199.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"renovar para um ano","ativo":true,"entrada":"2026-08"},{"id":"c026","conta":"OLINDINA","tipo":"cliente","empresa":"AK Computadores","responsavel":"Antonio Carlos","telefone":"","cod":"18","valor":100.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c027","conta":"OLINDINA","tipo":"cliente","empresa":"Walas Dia dos Pais","responsavel":"","telefone":"","cod":"19","valor":35.0,"diaVenc":1,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c028","conta":"OLINDINA","tipo":"cliente","empresa":"Clinica Liv","responsavel":"Igor","telefone":"","cod":"20","valor":200.0,"diaVenc":5,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c029","conta":"OLINDINA","tipo":"cliente","empresa":"Ed Iphones","responsavel":"Bernardo","telefone":"","cod":"21","valor":189.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c030","conta":"OLINDINA","tipo":"cliente","empresa":"APLB","responsavel":"Professora Rose","telefone":"","cod":"22","valor":269.0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c031","conta":"OLINDINA","tipo":"cliente","empresa":"Bahia Plano Funeraria","responsavel":"Vitu Designer","telefone":"","cod":"23","valor":269.0,"diaVenc":26,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c032","conta":"OLINDINA","tipo":"cliente","empresa":"The Iphones","responsavel":"Eduarda","telefone":"","cod":"24","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c033","conta":"OLINDINA","tipo":"cliente","empresa":"Casa da Ração","responsavel":"Irá","telefone":"","cod":"25","valor":169.0,"diaVenc":25,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c034","conta":"OLINDINA","tipo":"cliente","empresa":"Gilson Ornamentação","responsavel":"Gilson","telefone":"","cod":"26","valor":189.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c035","conta":"NOVA SOURE","tipo":"cliente","empresa":"Smobs","responsavel":"Elmaisa","telefone":"","cod":"1","valor":169.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c036","conta":"NOVA SOURE","tipo":"cliente","empresa":"Passos Nobre","responsavel":"Ju","telefone":"","cod":"2","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c037","conta":"NOVA SOURE","tipo":"cliente","empresa":"João Paulo Eventos","responsavel":"Joao Paulo","telefone":"","cod":"3","valor":289.9,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c038","conta":"NOVA SOURE","tipo":"cliente","empresa":"Cantinho","responsavel":"Elmasia","telefone":"","cod":"4","valor":189.0,"diaVenc":30,"ultAtualizacao":"2026-08-11","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c039","conta":"NOVA SOURE","tipo":"cliente","empresa":"Carvalho Costruções","responsavel":"Akila","telefone":"","cod":"5","valor":200.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c040","conta":"NOVA SOURE","tipo":"cliente","empresa":"Clinica Sourir","responsavel":"Karyelly","telefone":"","cod":"6","valor":189.9,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c041","conta":"NOVA SOURE","tipo":"cliente","empresa":"FCK Olindina","responsavel":"Abel","telefone":"","cod":"7","valor":0,"diaVenc":10,"ultAtualizacao":null,"ultContato":null,"obs":"valor na planilha: ok","ativo":true,"entrada":"2026-08"},{"id":"c042","conta":"NOVA SOURE","tipo":"cliente","empresa":"Imperio Modas","responsavel":"","telefone":"","cod":"8","valor":0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"valor na planilha: ok","ativo":true,"entrada":"2026-08"},{"id":"c043","conta":"NOVA SOURE","tipo":"cliente","empresa":"Mario e Luan","responsavel":"Mario Luan","telefone":"","cod":"9","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c044","conta":"NOVA SOURE","tipo":"cliente","empresa":"Milena Nutricionista","responsavel":"Milena / Ramon","telefone":"","cod":"10","valor":0,"diaVenc":null,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"valor na planilha: ok · vencimento **","ativo":true,"entrada":"2026-08"},{"id":"c045","conta":"NOVA SOURE","tipo":"cliente","empresa":"Moveis Valentm","responsavel":"Maisa Sena","telefone":"","cod":"11","valor":289.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c046","conta":"NOVA SOURE","tipo":"cliente","empresa":"Muniz Imobiliaria","responsavel":"Maria Muniz","telefone":"","cod":"12","valor":299.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"1 mês quer...","ativo":true,"entrada":"2026-08"},{"id":"c047","conta":"NOVA SOURE","tipo":"cliente","empresa":"NYL Modas","responsavel":"Gledson","telefone":"","cod":"13","valor":189.0,"diaVenc":30,"ultAtualizacao":"2026-08-06","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c048","conta":"NOVA SOURE","tipo":"cliente","empresa":"Otica da Fabrica","responsavel":"Pedro","telefone":"","cod":"14","valor":169.0,"diaVenc":30,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c049","conta":"NOVA SOURE","tipo":"cliente","empresa":"Peça Rara Boutique","responsavel":"Amanda","telefone":"","cod":"15","valor":259.0,"diaVenc":30,"ultAtualizacao":"2026-08-12","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c050","conta":"NOVA SOURE","tipo":"cliente","empresa":"Prefs","responsavel":"","telefone":"","cod":"16","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c051","conta":"NOVA SOURE","tipo":"cliente","empresa":"VN Lubrificantes","responsavel":"Jose Souza","telefone":"","cod":"17","valor":0,"diaVenc":30,"ultAtualizacao":"2026-08-01","ultContato":null,"obs":"valor na planilha: ok","ativo":true,"entrada":"2026-08"},{"id":"c052","conta":"NOVA SOURE","tipo":"cliente","empresa":"Studio Aila","responsavel":"Aila","telefone":"","cod":"18","valor":0,"diaVenc":30,"ultAtualizacao":"2026-08-11","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c053","conta":"NOVA SOURE","tipo":"cliente","empresa":"Dmelo","responsavel":"Bob","telefone":"","cod":"19","valor":0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c054","conta":"NOVA SOURE","tipo":"cliente","empresa":"Clinica Plena","responsavel":"Iago / Poliana / Felipe","telefone":"","cod":"20","valor":269.9,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c055","conta":"NOVA SOURE","tipo":"cliente","empresa":"ID Odontologia","responsavel":"Deysi Lucas","telefone":"","cod":"21","valor":229.0,"diaVenc":null,"ultAtualizacao":null,"ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c056","conta":"NOVA SOURE","tipo":"cliente","empresa":"Posto e Restaurante Natuba","responsavel":"Claudemir Rosa","telefone":"","cod":"22","valor":250.0,"diaVenc":null,"ultAtualizacao":"2026-08-08","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"},{"id":"c057","conta":"NOVA SOURE","tipo":"cliente","empresa":"Super Macedo","responsavel":"Ana Heloiza","telefone":"","cod":"23","valor":249.9,"diaVenc":null,"ultAtualizacao":"2026-08-08","ultContato":null,"obs":"","ativo":true,"entrada":"2026-08"}],"eventos":[{"cli":"c009","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":0.0,"nota":"importado da planilha (sem valor lançado)"},{"cli":"c010","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":1614.0,"nota":"importado da planilha"},{"cli":"c011","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":400.0,"nota":"importado da planilha"},{"cli":"c012","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":400.0,"nota":"importado da planilha"},{"cli":"c013","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":399.0,"nota":"importado da planilha"},{"cli":"c014","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":300.0,"nota":"importado da planilha"},{"cli":"c015","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":296.0,"nota":"importado da planilha"},{"cli":"c016","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":290.0,"nota":"importado da planilha"},{"cli":"c017","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c018","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c019","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c020","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c021","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":270.0,"nota":"importado da planilha"},{"cli":"c022","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":269.0,"nota":"importado da planilha"},{"cli":"c023","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":249.0,"nota":"importado da planilha"},{"cli":"c024","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":239.0,"nota":"importado da planilha"},{"cli":"c025","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":199.0,"nota":"importado da planilha"},{"cli":"c026","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":100.0,"nota":"importado da planilha"},{"cli":"c027","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":35.0,"nota":"importado da planilha"},{"cli":"c035","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":169.0,"nota":"importado da planilha"},{"cli":"c036","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":289.0,"nota":"importado da planilha"},{"cli":"c037","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c037","tipo":"pagamento","data":"2026-08-01","ref":"2026-08","valor":290.0,"nota":"importado da planilha"},{"cli":"c038","tipo":"arte","data":"2026-08-11","nota":"importado da planilha"},{"cli":"c039","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c040","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c041","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c042","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c043","tipo":"exclusividade","data":"2026-08-11","hora":"","nota":"importado da planilha"},{"cli":"c044","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c045","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c046","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c046","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c047","tipo":"arte","data":"2026-08-06","nota":"importado da planilha"},{"cli":"c048","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c049","tipo":"arte","data":"2026-08-12","nota":"importado da planilha"},{"cli":"c050","tipo":"exclusividade","data":"2026-08-07","hora":"","nota":"importado da planilha"},{"cli":"c051","tipo":"arte","data":"2026-08-01","nota":"importado da planilha"},{"cli":"c052","tipo":"arte","data":"2026-08-11","nota":"importado da planilha"},{"cli":"c052","tipo":"exclusividade","data":"2026-08-12","hora":"","nota":"importado da planilha"},{"cli":"c056","tipo":"arte","data":"2026-08-08","nota":"importado da planilha"},{"cli":"c057","tipo":"arte","data":"2026-08-08","nota":"importado da planilha"},{"cli":"c057","tipo":"exclusividade","data":"2026-06-09","hora":"","nota":"importado da planilha"}],"atrasados":[{"id":"a00","nome":"Pracont Teodomiro","cidade":"OLINDINA","status":"Online","meses":5,"total":1734.0,"saldo":1734.0,"obs":"Disse que ta se organizando pra pagar, pediu pra esperar um pouco mais. | toda semana diz ta conseguindo o dinheiro","ultContato":null,"recebidos":[]},{"id":"a01","nome":"Ateliê da Gil - Gilmara","cidade":"OLINDINA","status":"Pausado","meses":5,"total":945.0,"saldo":445.0,"obs":"Deu 500,00 em 17/08. Vai passar cartao | vai passar cartao","ultContato":"2026-08-10","recebidos":[{"id":"ra01","data":"2026-08-10","valor":500.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a02","nome":"Lirio dos Vales - 269","cidade":"OLINDINA","status":"Online","meses":3,"total":1345.0,"saldo":1345.0,"obs":"Rachel ficou de falar com o pastor, dá resposta ate Sexta feira 31/07 | abatendo Ramon","ultContato":null,"recebidos":[]},{"id":"a03","nome":"Agro Fontes","cidade":"OLINDINA","status":"Pausado","meses":1,"total":1156.0,"saldo":866.0,"obs":"Pediu pra esperar um pouco, teve imprevisto. | pediu pra esperar","ultContato":null,"recebidos":[]},{"id":"a04","nome":"APLB","cidade":"OLINDINA","status":"Pausado","meses":null,"total":1156.0,"saldo":356.0,"obs":"Sempre paga de 3 em 3 meses - em dias. | falta metado do que devia","ultContato":null,"recebidos":[]},{"id":"a05","nome":"JK Acougue - Kaio","cidade":"OLINDINA","status":"Online","meses":6,"total":1000.0,"saldo":1000.0,"obs":"Pagou 400,00 Julho. Vai pagar metade em 20/08 | está resolvendo pra pagar","ultContato":null,"recebidos":[]},{"id":"a06","nome":"Criativa - Abner","cidade":"OLINDINA","status":"Online","meses":0,"total":385.0,"saldo":0.0,"obs":"Falta 1x de 385 | não deu resposta","ultContato":"2026-08-10","recebidos":[{"id":"ra06","data":"2026-08-10","valor":385.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a07","nome":"Jakeline Cabelereira","cidade":"OLINDINA","status":"Pausado","meses":4,"total":756.0,"saldo":756.0,"obs":"Vai dar metade dia 10/08 e restante parcelado | sem resposta","ultContato":null,"recebidos":[]},{"id":"a08","nome":"Vandinho Turismo","cidade":"OLINDINA","status":"Online","meses":3,"total":656.0,"saldo":656.0,"obs":"Pediu pra esperar pra 10/08 | Pediu pra pausar, atpe conseguir pagar.","ultContato":null,"recebidos":[]},{"id":"a09","nome":"DRª Josilda Franco","cidade":"OLINDINA","status":"Pausado","meses":5,"total":645.0,"saldo":645.0,"obs":"Pagou uma parte em Abril, | Cobrei esperando","ultContato":null,"recebidos":[]},{"id":"a10","nome":"House Burguer Renata","cidade":"OLINDINA","status":"Pausado","meses":4,"total":378.0,"saldo":178.0,"obs":"Deu 200,00 Agosto. | sem resposta","ultContato":"2026-08-10","recebidos":[{"id":"ra10","data":"2026-08-10","valor":200.0,"nota":"recebido em ago/26 (planilha)"}]},{"id":"a11","nome":"Construaço - Elmo Serralheria","cidade":"OLINDINA","status":"Online","meses":2,"total":578.0,"saldo":578.0,"obs":"Não atende, | sem resposta","ultContato":null,"recebidos":[]},{"id":"a12","nome":"Ademir Barbearia","cidade":"OLINDINA","status":"Online","meses":2,"total":378.0,"saldo":378.0,"obs":"Esperar até dia 31/07 | pagando","ultContato":null,"recebidos":[]},{"id":"a13","nome":"Kaique de Jairinho","cidade":"OLINDINA","status":"Online","meses":1,"total":299.0,"saldo":299.0,"obs":"Sempre dando uma data sem cumprir | aguardando","ultContato":null,"recebidos":[]},{"id":"a14","nome":"Energia Solar Prime - Cristiano","cidade":"OLINDINA","status":"Online","meses":1,"total":289.0,"saldo":289.0,"obs":"Perdido | aguardando","ultContato":null,"recebidos":[]},{"id":"a15","nome":"Soure - Clinica Plena","cidade":"NOVA SOURE","status":"Online","meses":null,"total":1889.0,"saldo":1889.0,"obs":"Está fora do país, resolve quando chegar","ultContato":null,"recebidos":[]}],"despesas":[{"id":"d001","cidade":"OLINDINA","ref":"2026-08","nome":"Designers","valor":270.0},{"id":"d002","cidade":"OLINDINA","ref":"2026-08","nome":"Manutenção - T","valor":300.0},{"id":"d003","cidade":"OLINDINA","ref":"2026-08","nome":"Internet + Celular","valor":385.0},{"id":"d004","cidade":"OLINDINA","ref":"2026-08","nome":"Apps mensal","valor":115.0},{"id":"d005","cidade":"OLINDINA","ref":"2026-08","nome":"Contadora Débora","valor":125.0},{"id":"d006","cidade":"OLINDINA","ref":"2026-08","nome":"DAS","valor":96.3},{"id":"d007","cidade":"OLINDINA","ref":"2026-08","nome":"Manutenção Leo","valor":300.0},{"id":"d008","cidade":"OLINDINA","ref":"2026-08","nome":"J Andrade","valor":409.17},{"id":"d009","cidade":"NOVA SOURE","ref":"2026-08","nome":"Designers","valor":305.0},{"id":"d010","cidade":"NOVA SOURE","ref":"2026-08","nome":"Internet 7 linhas","valor":419.3},{"id":"d011","cidade":"NOVA SOURE","ref":"2026-08","nome":"Contadora","valor":125.0},{"id":"d012","cidade":"NOVA SOURE","ref":"2026-08","nome":"Apps mensal","valor":115.0},{"id":"d013","cidade":"NOVA SOURE","ref":"2026-08","nome":"Manutenção","valor":300.0}]};
 </script>
 <script>
@@ -478,6 +495,8 @@ async function carregar() {
 }
 function normalizar() {
   DB.atrasados = DB.atrasados || []; DB.eventos = DB.eventos || []; DB.despesas = DB.despesas || []; DB.prospects = DB.prospects || [];
+  DB.recargas = DB.recargas || [];
+  if (!DB.chips || !DB.chips.length) DB.chips = SEED_CHIPS.map(c => Object.assign({ ativo: true }, c));
   DB.clientes.forEach(c => {
     if (c.conta === 'ANAI') c.conta = 'OLINDINA';
     if (c.conta === 'LED') c.conta = 'NOVA SOURE';
@@ -777,6 +796,7 @@ function render() {
   $('#tabatr').textContent = DB.atrasados.filter(a => a.saldo > 0).length || '';
   const mr = $('#mesref'); mr.innerHTML = '';
   if (aba === 'PROSPECCAO') mr.textContent = 'Contatos que ainda não viraram cliente';
+  else if (aba === 'PAINEIS') mr.textContent = 'Chips de internet dos painéis · recarga a cada 30 dias';
   else {
     const nav = el('div', 'mesnav');
     const ant = el('button', 'mesbt', '‹'); ant.title = 'Mês anterior';
@@ -796,7 +816,8 @@ function render() {
       : mesRef === mesHoje ? 'Pagamentos, trocas e exclusividades deste mês' : 'Mês fechado — só leitura do que aconteceu'));
   }
   $('#tela').innerHTML = '';
-  if (aba === 'ATRASADOS') telaAtrasados();
+  if (aba === 'PAINEIS') telaPaineis();
+  else if (aba === 'ATRASADOS') telaAtrasados();
   else if (aba === 'PROSPECCAO') telaProspeccao();
   else telaCidade();
 }
@@ -1532,6 +1553,210 @@ function novoCliente(pre) {
     if (pre.prospectId) DB.prospects = DB.prospects.filter(p => p.id !== pre.prospectId);
     await salvar();
     aba = c.conta; marcarAba(); render(); abrirCliente(c.id);
+  }, 'Cadastrar');
+}
+
+
+/* ---------------- painéis e chips ---------------- */
+const LOCAL_NOME = { 'OLINDINA': 'Olindina', 'NOVA SOURE': 'Nova Soure', 'HOUSEFIT': 'House Fit', 'LED': 'Escritório LED+' };
+const nomeLocal = l => LOCAL_NOME[l] || l;
+const CICLO = 30;
+
+function ultimaRecarga(ch) {
+  return DB.recargas.filter(r => r.chip === ch.id).map(r => r.data).sort().pop() || ch.ultimaRecarga || null;
+}
+function statusChip(ch) {
+  const u = ultimaRecarga(ch);
+  if (!u) return { s: 'off', dias: null, t: 'sem recarga registrada', venceEm: null };
+  const venceEm = iso(new Date(dParse(u).getTime() + CICLO * 864e5));
+  const faltam = dias(hoje(), dParse(venceEm));
+  if (faltam < 0) return { s: 'off', dias: faltam, venceEm, t: `vencido há ${-faltam} dias` };
+  if (faltam <= 5) return { s: 'wait', dias: faltam, venceEm, t: faltam === 0 ? 'vence hoje' : `vence em ${faltam} dias` };
+  return { s: 'on', dias: faltam, venceEm, t: `vence em ${faltam} dias` };
+}
+
+function telaPaineis() {
+  const tela = $('#tela');
+  const chips = DB.chips.filter(c => c.ativo !== false);
+  const sts = chips.map(c => ({ c, st: statusChip(c) }));
+  const vencidos = sts.filter(x => x.st.s === 'off');
+  const proximos = sts.filter(x => x.st.s === 'wait');
+  const gastoMes = DB.recargas.filter(r => r.data.slice(0, 7) === mesRef).reduce((s2, r) => s2 + (r.valor || 0), 0);
+
+  tela.appendChild(kpis([
+    ['Chips ativos', chips.length, ''],
+    ['Recarga vencida ou sem registro', vencidos.length, vencidos.length ? 'alert' : 'good'],
+    ['Vence em até 5 dias', proximos.length, proximos.length ? 'warn' : 'good'],
+    ['Gasto em ' + mesNome(mesRef), money(gastoMes), ''],
+    ['Pré-pago · Controle', chips.filter(c => c.plano === 'PRE').length + ' · ' + chips.filter(c => c.plano === 'CONTROLE').length, ''],
+  ]));
+
+  const ordem = ['OLINDINA', 'NOVA SOURE', 'LED', 'HOUSEFIT'];
+  const locais = [...new Set(chips.map(c => c.local))].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+  locais.forEach(loc => {
+    const doLocal = sts.filter(x => x.c.local === loc)
+      .sort((a, b) => (a.st.venceEm || '0').localeCompare(b.st.venceEm || '0'));
+    tela.appendChild(bloco(nomeLocal(loc), doLocal.length + (doLocal.length === 1 ? ' chip' : ' chips')));
+    const box = el('div', 'box');
+    doLocal.forEach(({ c, st }) => {
+      const r = el('div', 'row chip');
+      const n = el('div', 'nome', c.painel);
+      n.appendChild(el('small', '', [
+        c.numero,
+        c.plano === 'PRE' ? 'pré-pago' : 'controle dia ' + (c.venc || '—'),
+        st.venceEm ? 'próxima ' + br(st.venceEm) : 'sem recarga'
+      ].filter(Boolean).join(' · ')));
+      r.appendChild(n);
+      const p = el('div', 'pill ' + st.s);
+      p.appendChild(el('i', 'pdot')); p.appendChild(el('span', '', st.t));
+      r.appendChild(p);
+      const ac = el('div', 'acoes');
+      const rb = el('button', 'mini', '↻'); rb.title = c.plano === 'PRE' ? 'Registrar recarga' : 'Registrar pagamento da fatura';
+      rb.onclick = e => { e.stopPropagation(); recarregar(c.id); };
+      ac.appendChild(rb);
+      r.appendChild(ac);
+      r.onclick = () => abrirChip(c.id);
+      box.appendChild(r);
+    });
+    tela.appendChild(box);
+  });
+
+  const fl = el('div', 'filters'); fl.style.marginTop = '14px';
+  const nv = el('button', 'chip', '+ Novo chip'); nv.onclick = novoChip; fl.appendChild(nv);
+  tela.appendChild(fl);
+
+  const recs = DB.recargas.filter(r => r.data.slice(0, 7) === mesRef).sort((a, b) => b.data.localeCompare(a.data));
+  tela.appendChild(bloco('Recargas de ' + mesNome(mesRef), recs.length ? recs.length + ' lançamentos · ' + money(gastoMes) : 'nada lançado'));
+  const rbox = el('div', 'box');
+  if (!recs.length) rbox.appendChild(el('div', 'empty', 'Nenhuma recarga registrada neste mês.'));
+  recs.forEach(r => {
+    const ch = DB.chips.find(x => x.id === r.chip);
+    const l = el('div', 'lin');
+    l.appendChild(el('span', '', (ch ? ch.painel + ' · ' + nomeLocal(ch.local) : 'chip removido') + ' — ' + br(r.data) + (r.nota ? ' · ' + r.nota : '')));
+    l.appendChild(el('b', '', money(r.valor)));
+    const x = el('button', 'linx', '✕'); x.title = 'Apagar';
+    x.onclick = async () => {
+      if (!confirm('Apagar essa recarga?')) return;
+      DB.recargas = DB.recargas.filter(y => y.id !== r.id); await salvar(); render();
+    };
+    l.appendChild(x); rbox.appendChild(l);
+  });
+  tela.appendChild(rbox);
+  tela.appendChild(rodape());
+}
+
+function recarregar(id) {
+  const ch = DB.chips.find(x => x.id === id);
+  const ultima = DB.recargas.filter(r => r.chip === id).sort((a, b) => b.data.localeCompare(a.data))[0];
+  const cidade = ch.local === 'OLINDINA' || ch.local === 'NOVA SOURE' ? ch.local : null;
+  const campos = [
+    { id: 'data', tipo: 'data', rot: ch.plano === 'PRE' ? 'Data da recarga' : 'Data do pagamento', valor: hojeIso },
+    { id: 'valor', rot: 'Valor', mask: 'moeda', valor: fmtMoedaEdit(ultima ? ultima.valor : ch.valorPadrao || 0) },
+    { id: 'nota', rot: 'Observação (opcional)', valor: '' }
+  ];
+  if (cidade) campos.push({ id: 'desp', tipo: 'check', rot: 'Lançar como despesa de ' + cidadeNome(cidade), valor: true });
+  modal(`${ch.plano === 'PRE' ? 'Recarga' : 'Fatura'} — ${ch.painel}`, campos, async v => {
+    const val = desmascMoeda(v.valor);
+    const data = v.data || hojeIso;
+    DB.recargas.push({ id: uid(), chip: id, data, valor: val, nota: v.nota.trim() });
+    ch.valorPadrao = val;
+    if (cidade && v.desp) {
+      DB.despesas.push({
+        id: uid(), cidade, ref: data.slice(0, 7), data,
+        nome: (ch.plano === 'PRE' ? 'Recarga chip ' : 'Fatura chip ') + ch.painel, valor: val
+      });
+    }
+    await salvar(); render(); if (abertoId === id) abrirChip(id);
+  }, 'Registrar');
+}
+
+function abrirChip(id) {
+  abertoId = id;
+  const c = DB.chips.find(x => x.id === id);
+  const st = statusChip(c);
+  const recs = DB.recargas.filter(r => r.chip === id).sort((a, b) => b.data.localeCompare(a.data));
+  const s = $('#sheet');
+  s.innerHTML = `
+  <header>
+    <button class="close" id="fechar" aria-label="Fechar">✕</button>
+    <h2>${esc(c.painel)}</h2>
+    <p>${esc(nomeLocal(c.local))} · ${c.plano === 'PRE' ? 'pré-pago' : 'controle'} · ${esc(c.numero)}</p>
+  </header>
+  <div class="body">
+    <div class="acts">
+      <button class="act wide" id="recarregar">${c.plano === 'PRE' ? 'Registrar recarga' : 'Registrar pagamento'}</button>
+    </div>
+    <div class="legend" style="margin:0"><span><i class="px ${st.s}"></i>${st.t}${st.venceEm ? ' · próxima em ' + br(st.venceEm) : ''}</span></div>
+
+    <div class="subhead">Dados do chip</div>
+    <div class="grid2">
+      <div class="f"><label>Painel</label><input id="k_painel" value="${esc(c.painel)}"></div>
+      <div class="f"><label>Número</label><input id="k_num" data-mask="tel" value="${esc(c.numero)}"></div>
+      <div class="f"><label>Local</label><select id="k_local">${['OLINDINA', 'NOVA SOURE', 'LED', 'HOUSEFIT'].map(x => `<option value="${x}" ${x === c.local ? 'selected' : ''}>${nomeLocal(x)}</option>`).join('')}</select></div>
+      <div class="f"><label>Plano</label><select id="k_plano">${[['PRE', 'Pré-pago'], ['CONTROLE', 'Controle']].map(([v, t]) => `<option value="${v}" ${v === c.plano ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="f"><label>Dia de vencimento</label><input id="k_venc" data-mask="num" value="${c.venc || ''}"></div>
+      <div class="f"><label>Valor da recarga</label><input id="k_valor" data-mask="moeda" value="${fmtMoedaEdit(c.valorPadrao || 0)}"></div>
+      <div class="f"><label>Titular</label><input id="k_tit" value="${esc(c.titular)}"></div>
+      <div class="f"><label>CPF do titular</label><input id="k_cpf" value="${esc(c.cpf)}"></div>
+      <div class="f"><label>Rede wifi</label><input id="k_wifi" value="${esc(c.wifi)}"></div>
+      <div class="f"><label>Senha do wifi</label><input id="k_senha" value="${esc(c.senha)}"></div>
+    </div>
+    <div class="f"><label>ICCID do chip</label><input id="k_iccid" value="${esc(c.iccid)}"></div>
+    <div class="f"><label>Acesso ao roteador (192.168.0.1)</label><input id="k_rot" value="${esc(c.roteador || '')}"></div>
+    <div class="f"><label>Observações</label><textarea id="k_obs" rows="2">${esc(c.obs || '')}</textarea></div>
+    <button class="primary" id="k_salvar">Salvar alterações</button>
+
+    <div class="subhead">Histórico de recargas (${recs.length})</div>
+    <div class="hist">${recs.length ? recs.map(r => `
+      <div><time>${br(r.data)}</time><b>${money(r.valor)}</b><s>${esc(r.nota || '')}</s>
+      <button data-del="${r.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhuma recarga registrada.</div>'}</div>
+
+    <div class="foot" style="margin-top:22px">
+      <button class="ghost" id="k_del" style="color:var(--bad)">Remover chip</button>
+    </div>
+  </div>`;
+  abrirSheet();
+  $('#fechar').onclick = fechar;
+  $('#recarregar').onclick = () => recarregar(id);
+  $('#k_salvar').onclick = async () => {
+    c.painel = $('#k_painel').value.trim(); c.numero = $('#k_num').value.trim();
+    c.local = $('#k_local').value; c.plano = $('#k_plano').value;
+    c.venc = parseInt(String($('#k_venc').value).replace(/\D/g, '')) || null;
+    c.valorPadrao = desmascMoeda($('#k_valor').value);
+    c.titular = $('#k_tit').value.trim(); c.cpf = $('#k_cpf').value.trim();
+    c.wifi = $('#k_wifi').value.trim(); c.senha = $('#k_senha').value.trim();
+    c.iccid = $('#k_iccid').value.trim(); c.roteador = $('#k_rot').value.trim();
+    c.obs = $('#k_obs').value.trim();
+    await salvar(); render(); abrirChip(id);
+  };
+  $('#k_del').onclick = async () => {
+    if (!confirm('Remover o chip ' + c.painel + ' e o histórico de recargas dele?')) return;
+    DB.chips = DB.chips.filter(x => x.id !== id);
+    DB.recargas = DB.recargas.filter(r => r.chip !== id);
+    await salvar(); fechar(); render();
+  };
+  s.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    DB.recargas = DB.recargas.filter(r => r.id !== b.dataset.del);
+    await salvar(); abrirChip(id); render();
+  });
+}
+
+function novoChip() {
+  modal('Novo chip', [
+    { id: 'painel', rot: 'Painel', valor: '', ph: 'Nome do ponto' },
+    { id: 'numero', rot: 'Número', mask: 'tel', valor: '', ph: '75 9 99998888' },
+    { id: 'local', tipo: 'select', rot: 'Local', valor: aba === 'PAINEIS' ? 'OLINDINA' : aba,
+      opcoes: [['OLINDINA', 'Olindina'], ['NOVA SOURE', 'Nova Soure'], ['LED', 'Escritório LED+'], ['HOUSEFIT', 'House Fit']] },
+    { id: 'plano', tipo: 'select', rot: 'Plano', valor: 'PRE', opcoes: [['PRE', 'Pré-pago'], ['CONTROLE', 'Controle']] },
+    { id: 'valor', rot: 'Valor da recarga', mask: 'moeda', valor: '' }
+  ], async v => {
+    if (!v.painel.trim()) { alert('Informe o painel.'); return true; }
+    const c = {
+      id: uid(), local: v.local, painel: v.painel.trim(), numero: v.numero.trim(), cpf: '', titular: '',
+      plano: v.plano, venc: null, iccid: '', wifi: '', senha: '', roteador: '', obs: '',
+      valorPadrao: desmascMoeda(v.valor), ativo: true
+    };
+    DB.chips.push(c); await salvar(); render(); abrirChip(c.id);
   }, 'Cadastrar');
 }
 
