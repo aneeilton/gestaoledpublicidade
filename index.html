@@ -169,6 +169,12 @@ input::placeholder{color:var(--muted-2)}
 .row.atr{grid-template-columns:1fr 110px 96px}
 .row.chip{grid-template-columns:1fr auto auto}
 .row.prazo{grid-template-columns:40px 1fr auto auto}
+.sep{display:flex;align-items:baseline;gap:9px;padding:11px 16px;background:var(--surface-2);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--line)}
+.sep span{font-size:12px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sep em{font-style:normal;font-size:12px;color:var(--muted-2)}
+.row.cortesia-linha .nome{font-weight:500}
+.row.cortesia-linha .avatar{background:var(--surface-3);color:var(--muted-2)}
 .row.enc{opacity:.85}
 .cortesias .row{grid-template-columns:1fr 140px 96px}
 
@@ -389,7 +395,7 @@ const esc = s => (s == null ? '' : String(s)).replace(/[<>&"]/g, m => ({ '<': '&
 let DB = { clientes: [], eventos: [], atrasados: [] };
 let memoriaSomente = false;
 let aba = 'OLINDINA', filtro = null, busca = '', abertoId = null;
-let verCortesias = false, verEncerrados = false;
+let verEncerrados = false;
 
 const hoje = () => new Date();
 const iso = d => d.toISOString().slice(0, 10);
@@ -891,13 +897,13 @@ function telaCidade() {
     ['Recebido em ' + mesNome(mesRef), money(recebido), 'good'],
     ['Falta receber no mês', aberto.length + ' · ' + money(aberto.reduce((s, c) => s + c.valor, 0)), aberto.length ? 'alert' : 'good'],
     ['Anúncios trocados no mês', trocados.length + '/' + cs.length, trocados.length ? '' : 'warn'],
-    ['Artes vencendo ou vencidas', cs.filter(c => { const v = statusValidade(c); return v && v.s !== 'on'; }).length,
-      cs.some(c => { const v = statusValidade(c); return v && v.s === 'off'; }) ? 'alert' : 'warn'],
+    ['Artes vencendo ou vencidas', todos.filter(c => { const v = statusValidade(c); return v && v.s !== 'on'; }).length,
+      todos.some(c => { const v = statusValidade(c); return v && v.s === 'off'; }) ? 'alert' : 'warn'],
     ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
   ]));
 
   /* anúncios com prazo */
-  const comPrazo = cs.map(c => ({ c, v: statusValidade(c) })).filter(x => x.v)
+  const comPrazo = todos.map(c => ({ c, v: statusValidade(c) })).filter(x => x.v)
     .sort((a, b) => a.v.validade.localeCompare(b.v.validade));
   const vencendo = comPrazo.filter(x => x.v.s !== 'on');
   if (comPrazo.length) {
@@ -930,7 +936,8 @@ function telaCidade() {
   }
 
   /* lista */
-  tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba)));
+  tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba) +
+    (cort.length ? ' · ' + cort.length + ' cortesias' : '')));
   const fl = el('div', 'filters');
   const inp = el('input'); inp.type = 'text'; inp.id = 'busca'; inp.placeholder = 'Buscar empresa, responsável ou código'; inp.value = busca;
   inp.oninput = e => {
@@ -949,14 +956,26 @@ function telaCidade() {
     .forEach(t => rh.appendChild(el('div', '', t)));
   tela.appendChild(rh);
 
-  let l = cs.slice();
-  if (filtro === 'alerta') l = l.filter(c => leds(c).some(st => st.s === 'off' || st.s === 'wait'));
-  if (busca) { const q = busca.toLowerCase(); l = l.filter(c => (c.empresa + ' ' + c.responsavel + ' ' + c.cod).toLowerCase().includes(q)); }
-  l.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR'));
+  const porNome = (a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR');
+  const filtra = arr => {
+    let r = arr.slice();
+    if (busca) { const q = busca.toLowerCase(); r = r.filter(c => (c.empresa + ' ' + c.responsavel + ' ' + c.cod).toLowerCase().includes(q)); }
+    return r.sort(porNome);
+  };
+  let pagantes = filtra(cs);
+  if (filtro === 'alerta') pagantes = pagantes.filter(c => leds(c).some(st => st.s === 'off' || st.s === 'wait'));
+  const cortesias = filtro === 'alerta' ? [] : filtra(cort);
+  const l = pagantes.concat(cortesias);
   const lista = el('div', 'box');
   if (!l.length) lista.appendChild(el('div', 'empty', 'Nenhum cliente com esse filtro.'));
-  l.forEach(c => {
-    const r = el('div', 'row'); r.tabIndex = 0; r.setAttribute('role', 'button');
+  l.forEach((c, i) => {
+    if (i === pagantes.length && cortesias.length) {
+      const sep = el('div', 'sep');
+      sep.appendChild(el('span', '', 'Cortesias'));
+      sep.appendChild(el('em', '', cortesias.length + ' sem cobrança e sem prazo de troca'));
+      lista.appendChild(sep);
+    }
+    const r = el('div', 'row' + (eCortesia(c) ? ' cortesia-linha' : '')); r.tabIndex = 0; r.setAttribute('role', 'button');
     r.appendChild(avatar(c.empresa));
     const n = el('div', 'nome', c.empresa);
     const ex = excs(c)[0];
@@ -1082,21 +1101,6 @@ function telaCidade() {
     tela.appendChild(ex);
   }
 
-  /* cortesias */
-  tela.appendChild(bloco('Cortesias', cort.length + ' sem cobrança', [verCortesias ? 'Ocultar' : 'Mostrar', () => { verCortesias = !verCortesias; render(); }]));
-  if (verCortesias) {
-    const cx = el('div', 'box cortesias');
-    if (!cort.length) cx.appendChild(el('div', 'empty', 'Nenhuma cortesia nesta cidade.'));
-    cort.sort((a, b) => a.empresa.localeCompare(b.empresa, 'pt-BR')).forEach(c => {
-      const r = el('button', 'row cortesia-row');
-      r.appendChild(el('div', 'nome', c.empresa));
-      r.appendChild(el('div', 'cell resp', c.responsavel || '—'));
-      r.appendChild(el('div', 'cell r', c.cod ? 'cód ' + c.cod : '—'));
-      r.onclick = () => abrirCliente(c.id);
-      cx.appendChild(r);
-    });
-    tela.appendChild(cx);
-  }
   tela.appendChild(rodape());
 }
 
@@ -1141,7 +1145,8 @@ function acoesLinha(c) {
   ];
   defs.forEach(d => {
     const feito = st[d.i].s === 'on';
-    const inativo = eCortesia(c) || (d.tipo === 'pagamento' && !c.valor);
+    const inativo = (d.tipo === 'arte' ? (eCortesia(c) && !statusValidade(c)) : eCortesia(c)) ||
+      (d.tipo === 'pagamento' && !c.valor);
     const b = el('button', 'pill ' + (inativo ? 'dead' : st[d.i].s || 'sem'));
     b.appendChild(el('i', 'pdot'));
     b.appendChild(el('span', '', d.rot));
@@ -2072,7 +2077,7 @@ async function testarConexao() {
 function marcarAba() { [...$('#tabs').children].forEach(x => x.classList.toggle('on', x.dataset.aba === aba)); }
 $('#tabs').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  aba = b.dataset.aba; filtro = null; busca = ''; verCortesias = verEncerrados = false;
+  aba = b.dataset.aba; filtro = null; busca = ''; verEncerrados = false;
   marcarAba(); render();
 };
 $('#scrim').onclick = fechar;
