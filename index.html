@@ -168,6 +168,7 @@ input::placeholder{color:var(--muted-2)}
 .row.prosp,.row.enc{grid-template-columns:1fr auto}
 .row.atr{grid-template-columns:1fr 110px 96px}
 .row.chip{grid-template-columns:1fr auto auto}
+.row.prazo{grid-template-columns:40px 1fr auto auto}
 .row.enc{opacity:.85}
 .cortesias .row{grid-template-columns:1fr 140px 96px}
 
@@ -635,9 +636,25 @@ function statusContato(c) {
   return { s: 'off', t: `sem falar há ${d} d` };
 }
 const leds = c => [statusArteMes(c), statusExcMes(c), statusPag(c)];
+/* o anúncio que está no ar agora e o prazo que ele carrega */
+function arteAtual(c) {
+  return DB.eventos.filter(e => e.cli === c.id && e.tipo === 'arte' && e.data <= hojeIso)
+    .sort((a, b) => b.data.localeCompare(a.data))[0] || null;
+}
+function statusValidade(c) {
+  const a = arteAtual(c);
+  if (!a || !a.validade) return null;
+  const faltam = dias(hoje(), dParse(a.validade));
+  if (faltam < 0) return { s: 'off', faltam, validade: a.validade, t: `arte vencida há ${-faltam} dias (${br(a.validade)})` };
+  if (faltam <= 7) return { s: 'wait', faltam, validade: a.validade, t: faltam === 0 ? 'arte vence hoje' : `arte vence em ${faltam} dias (${br(a.validade)})` };
+  return { s: 'on', faltam, validade: a.validade, t: 'arte válida até ' + br(a.validade) };
+}
+
 function statusArteMes(c) {
   const ult = c.ultAtualizacao;
-  if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
+  const val = statusValidade(c);
+  if (val && val.s !== 'on' && mesRef === mesHoje) return { s: val.s, t: val.t };
+  if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) + (val ? ' · ' + val.t : '') };
   const d = desde(ult);
   if (d === null) return { s: 'off', t: 'anúncio nunca trocado' };
   return { s: d > 60 ? 'off' : 'wait', t: `sem trocar neste mês · última em ${br(ult)} (${d} d)` };
@@ -711,12 +728,27 @@ async function abrirConvite(id) {
   const c = DB.clientes.find(x => x.id === id);
   const num = await garantirZap(c);
   if (!num) return;
+  const val = statusValidade(c);
   const d = desde(c.ultAtualizacao);
-  const tempo = d === null ? 'já faz um tempo que o seu anúncio não muda' : `o seu anúncio está no ar sem alteração há ${d} dias`;
-  const msg = `Oi, *${primeiroNome(c)}*!\n` +
-    `Passando para avisar que ${tempo}. Quer aproveitar para divulgar uma promoção ou novidade no painel?\n` +
-    `É só mandar as informações e as fotos que a gente monta a nova arte.\n` +
-    `Led+ Publicidade. 🚀`;
+  let msg;
+  if (val && val.faltam < 0) {
+    msg = `Oi, *${primeiroNome(c)}*!\n\n` +
+      `O anúncio que está no ar tinha validade até *${br(val.validade)}* e já passou do prazo.\n` +
+      `Me manda a nova arte ou as informações que a gente monta pra você.\n\n` +
+      `Led+ Publicidade. 🚀`;
+  } else if (val && val.faltam <= 7) {
+    msg = `Oi, *${primeiroNome(c)}*!\n\n` +
+      `Passando para lembrar que o seu anúncio vale até *${br(val.validade)}*` +
+      (val.faltam === 0 ? ' — *é hoje*' : ` — faltam *${val.faltam} dias*`) + `.\n` +
+      `Quer trocar a arte? Me manda as informações e as fotos que a gente monta a nova.\n\n` +
+      `Led+ Publicidade. 🚀`;
+  } else {
+    const tempo = d === null ? 'já faz um tempo que o seu anúncio não muda' : `o seu anúncio está no ar sem alteração há ${d} dias`;
+    msg = `Oi, *${primeiroNome(c)}*!\n\n` +
+      `Passando para avisar que ${tempo}. Quer aproveitar para divulgar uma promoção ou novidade no painel?\n` +
+      `É só mandar as informações e as fotos que a gente monta a nova arte.\n\n` +
+      `Led+ Publicidade. 🚀`;
+  }
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 const primeiroNome = c => (c.responsavel || c.empresa).split(' ')[0];
@@ -859,8 +891,43 @@ function telaCidade() {
     ['Recebido em ' + mesNome(mesRef), money(recebido), 'good'],
     ['Falta receber no mês', aberto.length + ' · ' + money(aberto.reduce((s, c) => s + c.valor, 0)), aberto.length ? 'alert' : 'good'],
     ['Anúncios trocados no mês', trocados.length + '/' + cs.length, trocados.length ? '' : 'warn'],
+    ['Artes vencendo ou vencidas', cs.filter(c => { const v = statusValidade(c); return v && v.s !== 'on'; }).length,
+      cs.some(c => { const v = statusValidade(c); return v && v.s === 'off'; }) ? 'alert' : 'warn'],
     ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
   ]));
+
+  /* anúncios com prazo */
+  const comPrazo = cs.map(c => ({ c, v: statusValidade(c) })).filter(x => x.v)
+    .sort((a, b) => a.v.validade.localeCompare(b.v.validade));
+  const vencendo = comPrazo.filter(x => x.v.s !== 'on');
+  if (comPrazo.length) {
+    tela.appendChild(bloco('Anúncios com prazo', vencendo.length
+      ? vencendo.length + ' precisando de troca' : comPrazo.length + ' no ar, todos dentro do prazo'));
+    const pb = el('div', 'box');
+    comPrazo.forEach(({ c, v }) => {
+      const r = el('div', 'row prazo'); r.tabIndex = 0; r.setAttribute('role', 'button');
+      r.appendChild(avatar(c.empresa));
+      const a = arteAtual(c);
+      const n = el('div', 'nome', c.empresa);
+      n.appendChild(el('small', '', [
+        a && a.nota ? a.nota : 'arte sem descrição',
+        'no ar desde ' + br(a.data)
+      ].join(' · ')));
+      r.appendChild(n);
+      const p = el('div', 'pill ' + v.s);
+      p.appendChild(el('i', 'pdot')); p.appendChild(el('span', '', v.t));
+      r.appendChild(p);
+      const ac = el('div', 'acoes');
+      const z = el('button', 'mini zap', '⟳'); z.title = 'Avisar no WhatsApp que o prazo está acabando';
+      z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
+      const t = el('button', 'mini', '✎'); t.title = 'Registrar a troca do anúncio';
+      t.onclick = e => { e.stopPropagation(); trocarAnuncio(c.id); };
+      ac.append(z, t); r.appendChild(ac);
+      r.onclick = () => abrirCliente(c.id);
+      pb.appendChild(r);
+    });
+    tela.appendChild(pb);
+  }
 
   /* lista */
   tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba)));
@@ -1166,8 +1233,7 @@ async function marcar(id, tipo) {
     return;
   }
   if (tipo === 'exclusividade') { abrirExclusividade(id); return; }
-  if (!confirm(`Marcar que o anúncio de ${c.empresa} foi trocado hoje (${br(hojeIso)})?`)) return;
-  DB.eventos.push(ev); recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
+  trocarAnuncio(id);
 }
 
 function telaAtrasados() {
@@ -1436,7 +1502,7 @@ function abrirCliente(id) {
     <div class="hist">${evs.length ? evs.map(e => `
       <div><time>${br(e.data)}${e.hora ? ' ' + e.hora : ''}</time>
       <b>${e.tipo === 'pagamento' ? 'pagto' : e.tipo === 'exclusividade' ? 'exclus.' : e.tipo === 'arte' ? 'anúncio' : e.tipo === 'ajuste' ? 'dispensa' : e.tipo}</b>
-      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${e.tipo === 'ajuste' && e.ref ? 'ref ' + mesNome(e.ref) + ' · ' : ''}${esc(e.nota || '')}</s>
+      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${e.tipo === 'ajuste' && e.ref ? 'ref ' + mesNome(e.ref) + ' · ' : ''}${e.tipo === 'arte' && e.validade ? 'vale até ' + br(e.validade) + ' · ' : ''}${esc(e.nota || '')}</s>
       <button data-del="${e.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhum registro ainda.</div>'}</div>
 
     <div class="foot" style="margin-top:22px">
@@ -1501,11 +1567,26 @@ function fechar() { $('#sheet').classList.remove('open'); $('#sheet').setAttribu
 async function registrar(id, tipo) {
   if (tipo === 'pagamento' || tipo === 'exclusividade') return marcar(id, tipo);
   const c = DB.clientes.find(x => x.id === id);
-  const rot = tipo === 'arte' ? 'Troca de anúncio' : 'Contato';
-  modal(`${rot} — ${c.empresa}`, [
-    { id: 'nota', rot: tipo === 'arte' ? 'Nota sobre o novo anúncio (opcional)' : 'Como foi a conversa? (opcional)', tipo: 'textarea', valor: '' }
+  if (tipo === 'arte') return trocarAnuncio(id);
+  modal(`Contato — ${c.empresa}`, [
+    { id: 'nota', rot: 'Como foi a conversa? (opcional)', tipo: 'textarea', valor: '' }
   ], async v => {
     DB.eventos.push({ id: uid(), cli: id, tipo, data: hojeIso, nota: v.nota.trim() });
+    recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
+  }, 'Registrar');
+}
+
+function trocarAnuncio(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  modal(`Troca de anúncio — ${c.empresa}`, [
+    { id: 'data', tipo: 'data', rot: 'Dia em que a arte entrou no ar', valor: hojeIso },
+    { id: 'validade', tipo: 'data', rot: 'Esta arte vale até (deixe vazio se não expira)', valor: '' },
+    { id: 'nota', rot: 'O que é a arte (promoção, data comemorativa...)', valor: '' }
+  ], async v => {
+    DB.eventos.push({
+      id: uid(), cli: id, tipo: 'arte', data: v.data || hojeIso,
+      validade: v.validade || null, nota: v.nota.trim()
+    });
     recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
   }, 'Registrar');
 }
