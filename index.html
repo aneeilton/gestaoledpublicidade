@@ -660,6 +660,10 @@ function statusArteMes(c) {
   const ult = c.ultAtualizacao;
   const val = statusValidade(c);
   if (val && val.s !== 'on' && mesRef === mesHoje) return { s: val.s, t: val.t };
+  if (eCortesia(c) && !val) {
+    if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
+    return { s: '', t: ult ? 'última troca em ' + br(ult) + ' · cortesia, sem prazo' : 'cortesia — nenhuma troca registrada' };
+  }
   if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) + (val ? ' · ' + val.t : '') };
   const d = desde(ult);
   if (d === null) return { s: 'off', t: 'anúncio nunca trocado' };
@@ -668,6 +672,7 @@ function statusArteMes(c) {
 function statusExcMes(c) {
   const e = excs(c)[0];
   if (e && e.data.slice(0, 7) === mesRef) return { s: 'on', t: 'exclusividade em ' + br(e.data) + (e.hora ? ' às ' + e.hora : '') };
+  if (eCortesia(c)) return { s: '', t: e ? 'última exclusividade em ' + br(e.data) : 'sem exclusividade registrada' };
   if (!e) return { s: 'off', t: 'nunca teve exclusividade' };
   const d = dias(dParse(e.data), hoje());
   return { s: d > 60 ? 'off' : 'wait', t: `sem exclusividade neste mês · última em ${br(e.data)}` };
@@ -1145,8 +1150,7 @@ function acoesLinha(c) {
   ];
   defs.forEach(d => {
     const feito = st[d.i].s === 'on';
-    const inativo = (d.tipo === 'arte' ? (eCortesia(c) && !statusValidade(c)) : eCortesia(c)) ||
-      (d.tipo === 'pagamento' && !c.valor);
+    const inativo = d.tipo === 'pagamento' && (eCortesia(c) || !c.valor);
     const b = el('button', 'pill ' + (inativo ? 'dead' : st[d.i].s || 'sem'));
     b.appendChild(el('i', 'pdot'));
     b.appendChild(el('span', '', d.rot));
@@ -1484,7 +1488,7 @@ function abrirCliente(id) {
       <span><i class="px ${a.s}"></i>${a.t}</span><span><i class="px ${p.s}"></i>${p.t}</span><span><i class="px ${f.s}"></i>${f.t}</span>
     </div>
     ${!ativoNoMes(c, mesRef) ? `<div class="warnbar" style="margin:12px 0 0">Este cliente ${c.entrada > mesRef ? 'entrou em ' + mesNome(c.entrada) : 'foi encerrado em ' + mesNome(c.saida)}, por isso não entra nas contas de ${mesNome(mesRef)}.</div>` : ''}
-    ${eCortesia(c) ? '<div class="warnbar" style="margin:12px 0 0">Cortesia: sem cobrança e sem compromisso de trocar o anúncio. Não entra nos indicadores do mês.</div>' : ''}
+    ${eCortesia(c) ? '<div class="warnbar" style="margin:12px 0 0">Cortesia: sem cobrança e sem prazo obrigatório de troca. As trocas de anúncio e as exclusividades podem ser registradas normalmente.</div>' : ''}
 
     ${(() => { const rr = refsEmAberto(c); const dv = dividaAvulsa(c);
       return (rr.length || dv) ? `<div class="warnbar" style="margin:12px 0 0">Em atraso: ${rr.length ? rr.map(mesNome).join(', ') : ''}${rr.length && dv ? ' · ' : ''}${dv ? 'dívida anterior de ' + money(dv) : ''} — total ${money(rr.length * (c.valor || 0) + dv)}.</div>` : ''; })()}
