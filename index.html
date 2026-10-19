@@ -671,7 +671,11 @@ function statusArteMes(c) {
     if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) };
     return { s: '', t: ult ? 'última troca em ' + br(ult) + ' · cortesia, sem prazo' : 'cortesia — nenhuma troca registrada' };
   }
-  if (ult && ult.slice(0, 7) === mesRef) return { s: 'on', t: 'anúncio trocado em ' + br(ult) + (val ? ' · ' + val.t : '') };
+  if (ult && ult.slice(0, 7) === mesRef) {
+    const a = arteAtual(c);
+    return { s: 'on', t: 'anúncio trocado em ' + br(ult) +
+      (a && a.autor ? ' · ' + (a.autor === 'designer' ? 'pelo designer' : 'por mim') : '') + (val ? ' · ' + val.t : '') };
+  }
   const d = desde(ult);
   if (d === null) return { s: 'off', t: 'anúncio nunca trocado' };
   return { s: d > 60 ? 'off' : 'wait', t: `sem trocar neste mês · última em ${br(ult)} (${d} d)` };
@@ -912,6 +916,10 @@ function telaCidade() {
     ['Artes vencendo ou vencidas', todos.filter(c => { const v = statusValidade(c); return v && v.s !== 'on'; }).length,
       todos.some(c => { const v = statusValidade(c); return v && v.s === 'off'; }) ? 'alert' : 'warn'],
     ['Exclusividades no mês', comExc.length + '/' + cs.length, comExc.length ? '' : 'warn'],
+    ['Artes do mês · eu / designer', (() => {
+      const evs = DB.eventos.filter(e => e.tipo === 'arte' && e.data.slice(0, 7) === mesRef && todos.some(c => c.id === e.cli));
+      return evs.filter(e => e.autor !== 'designer').length + ' / ' + evs.filter(e => e.autor === 'designer').length;
+    })(), ''],
     ['Anúncios sem post no Instagram', todos.filter(c => statusPost(c).s !== 'on' && arteAtual(c)).length,
       todos.some(c => statusPost(c).s === 'off' && arteAtual(c)) ? 'warn' : 'good'],
   ]));
@@ -931,8 +939,9 @@ function telaCidade() {
       const n = el('div', 'nome', c.empresa);
       n.appendChild(el('small', '', [
         a && a.nota ? a.nota : 'arte sem descrição',
-        'no ar desde ' + br(a.data)
-      ].join(' · ')));
+        'no ar desde ' + br(a.data),
+        a && a.autor === 'designer' ? 'designer' : (a && a.autor ? 'feita por mim' : '')
+      ].filter(Boolean).join(' · ')));
       r.appendChild(n);
       const p = el('div', 'pill ' + v.s);
       p.appendChild(el('i', 'pdot')); p.appendChild(el('span', '', v.t));
@@ -1529,7 +1538,7 @@ function abrirCliente(id) {
     <div class="hist">${evs.length ? evs.map(e => `
       <div><time>${br(e.data)}${e.hora ? ' ' + e.hora : ''}</time>
       <b>${e.tipo === 'pagamento' ? 'pagto' : e.tipo === 'exclusividade' ? 'exclus.' : e.tipo === 'arte' ? 'anúncio' : e.tipo === 'ajuste' ? 'dispensa' : e.tipo === 'post' ? 'insta' : e.tipo}</b>
-      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${e.tipo === 'ajuste' && e.ref ? 'ref ' + mesNome(e.ref) + ' · ' : ''}${e.tipo === 'arte' && e.validade ? 'vale até ' + br(e.validade) + ' · ' : ''}${e.tipo === 'post' ? (e.enviado ? 'enviado ao cliente · ' : 'não enviado · ') : ''}${esc(e.nota || '')}</s>
+      <s>${e.tipo === 'pagamento' ? money(e.valor) + (e.ref ? ' · ref ' + mesNome(e.ref) : '') + ' ' : ''}${e.tipo === 'ajuste' && e.ref ? 'ref ' + mesNome(e.ref) + ' · ' : ''}${e.tipo === 'arte' && e.autor ? (e.autor === 'designer' ? 'designer · ' : 'feita por mim · ') : ''}${e.tipo === 'arte' && e.validade ? 'vale até ' + br(e.validade) + ' · ' : ''}${e.tipo === 'post' ? (e.enviado ? 'enviado ao cliente · ' : 'não enviado · ') : ''}${esc(e.nota || '')}</s>
       <button data-del="${e.id}" title="Apagar">✕</button></div>`).join('') : '<div class="empty" style="padding:12px 0">Nenhum registro ainda.</div>'}</div>
 
     <div class="foot" style="margin-top:22px">
@@ -1643,13 +1652,17 @@ async function abrirEnvioPost(id) {
 
 function trocarAnuncio(id) {
   const c = DB.clientes.find(x => x.id === id);
+  const ultima = DB.eventos.filter(e => e.cli === id && e.tipo === 'arte' && e.autor)
+    .sort((a, b) => b.data.localeCompare(a.data))[0];
   modal(`Troca de anúncio — ${c.empresa}`, [
+    { id: 'autor', tipo: 'opcoes', rot: 'Quem criou a arte', valor: ultima ? ultima.autor : 'eu',
+      opcoes: [['eu', 'Eu'], ['designer', 'Designer']] },
     { id: 'data', tipo: 'data', rot: 'Dia em que a arte entrou no ar', valor: hojeIso },
     { id: 'validade', tipo: 'data', rot: 'Esta arte vale até (deixe vazio se não expira)', valor: '' },
     { id: 'nota', rot: 'O que é a arte (promoção, data comemorativa...)', valor: '' }
   ], async v => {
     DB.eventos.push({
-      id: uid(), cli: id, tipo: 'arte', data: v.data || hojeIso,
+      id: uid(), cli: id, tipo: 'arte', data: v.data || hojeIso, autor: v.autor || 'eu',
       validade: v.validade || null, nota: v.nota.trim()
     });
     recalc(id); await salvar(); render(); if (abertoId === id) abrirCliente(id);
