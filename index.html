@@ -170,6 +170,15 @@ input::placeholder{color:var(--muted-2)}
 .row.atr{grid-template-columns:1fr 110px 96px}
 .row.chip{grid-template-columns:1fr auto auto}
 .row.prazo{grid-template-columns:40px 1fr auto auto}
+.tabela{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabela th{text-align:left;font-weight:600;color:var(--muted-2);font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tabela td{padding:11px 16px;border-bottom:1px solid var(--line)}
+.tabela tbody tr:last-child td{border-bottom:1px solid var(--border)}
+.tabela tr.atual td{background:var(--surface-2);font-weight:550}
+.tabela th.r,.tabela td.r{text-align:right;font-variant-numeric:tabular-nums}
+.tabela td.forte{font-weight:650}
+.tabela tfoot td{border-bottom:0;font-weight:650;color:var(--text);background:var(--surface-2)}
 .sep{display:flex;align-items:baseline;gap:9px;padding:11px 16px;background:var(--surface-2);
   border-top:1px solid var(--border);border-bottom:1px solid var(--line)}
 .sep span{font-size:12px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
@@ -1122,6 +1131,52 @@ function telaCidade() {
       ex.appendChild(r);
     });
     tela.appendChild(ex);
+  }
+
+  /* produção de artes */
+  const meses6 = []; for (let k = 5; k >= 0; k--) meses6.push(somaMes(mesRef, -k));
+  const artes = DB.eventos.filter(e => e.tipo === 'arte' && todos.some(c => c.id === e.cli));
+  const linhasArte = meses6.map(m => {
+    const doMes = artes.filter(e => e.data.slice(0, 7) === m);
+    return { m, eu: doMes.filter(e => e.autor !== 'designer').length, des: doMes.filter(e => e.autor === 'designer').length };
+  });
+  const somaEu = linhasArte.reduce((s2, l) => s2 + l.eu, 0);
+  const somaDes = linhasArte.reduce((s2, l) => s2 + l.des, 0);
+  const somaTot = somaEu + somaDes;
+
+  tela.appendChild(bloco('Produção de artes', 'últimos 6 meses · ' + cidadeNome(aba)));
+  const pb = el('div', 'box');
+  if (!somaTot) pb.appendChild(el('div', 'empty', 'Nenhuma troca de anúncio registrada neste período.'));
+  else {
+    const t = el('table', 'tabela');
+    const thead = el('thead'), trh = el('tr');
+    ['Mês', 'Eu', 'Designer', 'Total'].forEach((h, i) => trh.appendChild(el('th', i ? 'r' : '', h)));
+    thead.appendChild(trh); t.appendChild(thead);
+    const tb = el('tbody');
+    linhasArte.forEach(l => {
+      const tr = el('tr', l.m === mesRef ? 'atual' : '');
+      tr.appendChild(el('td', '', MESESL[+l.m.slice(5, 7) - 1] + '/' + l.m.slice(2, 4)));
+      tr.appendChild(el('td', 'r', String(l.eu)));
+      tr.appendChild(el('td', 'r', String(l.des)));
+      tr.appendChild(el('td', 'r forte', String(l.eu + l.des)));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    const tf = el('tfoot'), trf = el('tr');
+    trf.appendChild(el('td', '', 'Total no período'));
+    trf.appendChild(el('td', 'r', String(somaEu)));
+    trf.appendChild(el('td', 'r', String(somaDes)));
+    trf.appendChild(el('td', 'r forte', String(somaTot)));
+    tf.appendChild(trf); t.appendChild(tf);
+    pb.appendChild(t);
+  }
+  tela.appendChild(pb);
+  if (somaTot) {
+    const lgA = el('div', 'legend');
+    lgA.innerHTML = '<span>' + Math.round(somaEu / somaTot * 100) + '% feitas por mim · ' +
+      Math.round(somaDes / somaTot * 100) + '% pelo designer</span>' +
+      '<span>Trocas registradas antes do campo de autoria entram como feitas por mim.</span>';
+    tela.appendChild(lgA);
   }
 
   tela.appendChild(rodape());
