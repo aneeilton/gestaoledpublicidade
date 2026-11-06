@@ -967,6 +967,58 @@ function telaCidade() {
     tela.appendChild(pb);
   }
 
+  /* fila de atualização */
+  const mesPassado = somaMes(mesRef, -1);
+  const fila = cs
+    .filter(c => !(c.ultAtualizacao && c.ultAtualizacao.slice(0, 7) >= mesRef))
+    .map(c => ({ c, a: arteAtual(c), d: desde(c.ultAtualizacao) }))
+    .sort((x, y) => {
+      if (!x.c.ultAtualizacao && !y.c.ultAtualizacao) return x.c.empresa.localeCompare(y.c.empresa, 'pt-BR');
+      if (!x.c.ultAtualizacao) return -1;
+      if (!y.c.ultAtualizacao) return 1;
+      return x.c.ultAtualizacao.localeCompare(y.c.ultAtualizacao);
+    });
+  const doMesPassado = fila.filter(x => x.c.ultAtualizacao && x.c.ultAtualizacao.slice(0, 7) === mesPassado).length;
+  tela.appendChild(bloco('Fila de atualização', fila.length
+    ? fila.length + ' sem trocar em ' + mesNome(mesRef) + (doMesPassado ? ' · ' + doMesPassado + ' de ' + mesNome(mesPassado) : '')
+    : 'todos já trocaram neste mês'));
+  const fb = el('div', 'box');
+  if (!fila.length) fb.appendChild(el('div', 'empty', 'Nenhum anúncio pendente de troca em ' + mesNome(mesRef) + '.'));
+  fila.forEach(({ c, a, d }) => {
+    const r = el('div', 'row prazo'); r.tabIndex = 0; r.setAttribute('role', 'button');
+    r.appendChild(avatar(c.empresa));
+    const n = el('div', 'nome', c.empresa);
+    n.appendChild(el('small', '', [
+      a && a.nota ? a.nota : (c.ultAtualizacao ? 'arte sem descrição' : 'nunca teve troca registrada'),
+      a && a.autor === 'designer' ? 'designer' : (a && a.autor ? 'feita por mim' : '')
+    ].filter(Boolean).join(' · ')));
+    r.appendChild(n);
+    const cor = d === null ? 'off' : (d > 60 ? 'off' : (d > 30 ? 'wait' : ''));
+    const p = el('div', 'pill ' + cor);
+    p.appendChild(el('i', 'pdot'));
+    p.appendChild(el('span', '', c.ultAtualizacao ? br(c.ultAtualizacao) : 'nunca'));
+    if (d !== null) p.appendChild(el('time', '', 'há ' + d + ' d'));
+    p.title = c.ultAtualizacao ? 'última troca em ' + br(c.ultAtualizacao) : 'nenhuma troca registrada';
+    r.appendChild(p);
+    const ac = el('div', 'acoes');
+    const z = el('button', 'mini zap', '⟳'); z.title = 'Convidar a atualizar pelo WhatsApp';
+    z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
+    const t = el('button', 'mini', '✎'); t.title = 'Registrar a troca do anúncio';
+    t.onclick = e => { e.stopPropagation(); trocarAnuncio(c.id); };
+    ac.append(z, t); r.appendChild(ac);
+    r.onclick = () => abrirCliente(c.id);
+    r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
+    fb.appendChild(r);
+  });
+  tela.appendChild(fb);
+  if (fila.length) {
+    const lgF = el('div', 'legend');
+    lgF.innerHTML = '<span>Da troca mais antiga para a mais recente — o primeiro da lista é a prioridade.</span>' +
+      '<span><i style="background:var(--bad)"></i>+60 dias ou nunca</span>' +
+      '<span><i style="background:var(--warn)"></i>30 a 60 dias</span>';
+    tela.appendChild(lgF);
+  }
+
   /* lista */
   tela.appendChild(bloco('Clientes', cs.length + ' em ' + cidadeNome(aba) +
     (cort.length ? ' · ' + cort.length + ' cortesias' : '')));
