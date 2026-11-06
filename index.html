@@ -169,23 +169,21 @@ input::placeholder{color:var(--muted-2)}
 .row.prosp,.row.enc{grid-template-columns:1fr auto}
 .row.atr{grid-template-columns:1fr 110px 96px}
 .row.chip{grid-template-columns:1fr auto auto}
-.row.prazo{grid-template-columns:40px 1fr auto auto}
-.box.fila{padding:2px 0}
-.filarow{display:flex;align-items:center;gap:9px;padding:6px 14px;cursor:pointer;border-radius:8px;
-  margin:0 4px;font-size:13px;line-height:1.3}
+.box.fila{padding:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 8px}
+.filarow{display:flex;align-items:center;gap:8px;padding:7px 9px;cursor:pointer;border-radius:8px;
+  font-size:13px;line-height:1.3;min-width:0}
 .filarow:hover{background:var(--surface-2)}
 .fdot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);flex:none}
-.fdot.wait{background:var(--warn)} .fdot.off{background:var(--bad)}
+.fdot.on{background:var(--ok)} .fdot.wait{background:var(--warn)} .fdot.off{background:var(--bad)}
 .fnome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.fdata{font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums;flex:none;width:46px;text-align:right}
-.fdias{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;width:52px;text-align:right}
-.fbt{border:0;background:none;color:var(--muted-2);width:26px;height:24px;flex:none;border-radius:6px;
+.fdias{font-size:11.5px;color:var(--muted-2);font-variant-numeric:tabular-nums;flex:none;text-align:right}
+.fbt{border:0;background:none;color:var(--muted-2);width:24px;height:24px;flex:none;border-radius:6px;
   display:flex;align-items:center;justify-content:center;font-size:12.5px;padding:0}
 .fbt:hover{background:var(--surface-3);color:var(--text)}
 .fbt.zap{color:var(--zap)}
 .fbt.zap:hover{background:var(--zap);color:#fff}
-.filamais{width:100%;border:0;background:none;color:var(--accent);font-size:12.5px;font-weight:550;
-  padding:9px;border-top:1px solid var(--line);margin-top:3px}
+.filamais{grid-column:1/-1;border:0;background:none;color:var(--accent);font-size:12.5px;font-weight:550;
+  padding:9px;border-top:1px solid var(--line);margin-top:5px}
 .filamais:hover{background:var(--surface-2)}
 .tabela{width:100%;border-collapse:collapse;font-size:13.5px}
 .tabela th{text-align:left;font-weight:600;color:var(--muted-2);font-size:11px;text-transform:uppercase;
@@ -318,6 +316,7 @@ label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-w
 .rodape{text-align:center;font-size:12px;color:var(--muted-2);margin-top:30px}
 
 /* ============ mobile: barra inferior ============ */
+@media (max-width:1040px){ .box.fila{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:860px){
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .rowhead{display:none}
@@ -325,6 +324,7 @@ label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-w
   .row .acoes{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
   .row .cell.resp{display:none}
   .row.prosp,.row.enc,.row.atr,.cortesias .row{grid-template-columns:1fr auto}
+  .box.fila{grid-template-columns:1fr}
   .grid2{grid-template-columns:1fr}
   .appbar-in{height:58px}
   .brand small{display:none}
@@ -421,7 +421,7 @@ const esc = s => (s == null ? '' : String(s)).replace(/[<>&"]/g, m => ({ '<': '&
 let DB = { clientes: [], eventos: [], atrasados: [] };
 let memoriaSomente = false;
 let aba = 'OLINDINA', filtro = null, busca = '', abertoId = null;
-let verEncerrados = false, verFila = false;
+let verEncerrados = false, verFila = false, verPrazo = false;
 
 const hoje = () => new Date();
 const iso = d => d.toISOString().slice(0, 10);
@@ -950,37 +950,37 @@ function telaCidade() {
       todos.some(c => statusPost(c).s === 'off' && arteAtual(c)) ? 'warn' : 'good'],
   ]));
 
-  /* anúncios com prazo */
+  /* anúncios com prazo — lembrete compacto */
   const comPrazo = todos.map(c => ({ c, v: statusValidade(c) })).filter(x => x.v)
     .sort((a, b) => a.v.validade.localeCompare(b.v.validade));
   const vencendo = comPrazo.filter(x => x.v.s !== 'on');
   if (comPrazo.length) {
     tela.appendChild(bloco('Anúncios com prazo', vencendo.length
-      ? vencendo.length + ' precisando de troca' : comPrazo.length + ' no ar, todos dentro do prazo'));
-    const pb = el('div', 'box');
-    comPrazo.forEach(({ c, v }) => {
-      const r = el('div', 'row prazo'); r.tabIndex = 0; r.setAttribute('role', 'button');
-      r.appendChild(avatar(c.empresa));
+      ? vencendo.length + ' precisando de troca' : comPrazo.length + ' no ar, todos dentro do prazo',
+      comPrazo.length > 12 ? [verPrazo ? 'Ver menos' : 'Ver todos', () => { verPrazo = !verPrazo; render(); }] : null));
+    const pb = el('div', 'box fila');
+    (verPrazo ? comPrazo : comPrazo.slice(0, 12)).forEach(({ c, v }) => {
       const a = arteAtual(c);
-      const n = el('div', 'nome', c.empresa);
-      n.appendChild(el('small', '', [
-        a && a.nota ? a.nota : 'arte sem descrição',
-        'no ar desde ' + br(a.data),
-        a && a.autor === 'designer' ? 'designer' : (a && a.autor ? 'feita por mim' : '')
-      ].filter(Boolean).join(' · ')));
-      r.appendChild(n);
-      const p = el('div', 'pill ' + v.s);
-      p.appendChild(el('i', 'pdot')); p.appendChild(el('span', '', v.t));
-      r.appendChild(p);
-      const ac = el('div', 'acoes');
-      const z = el('button', 'mini zap', '⟳'); z.title = 'Avisar no WhatsApp que o prazo está acabando';
+      const r = el('div', 'filarow'); r.tabIndex = 0; r.setAttribute('role', 'button');
+      r.appendChild(el('i', 'fdot ' + v.s));
+      const nm = el('span', 'fnome', c.empresa);
+      nm.title = [c.empresa, a && a.nota ? a.nota : null, v.t].filter(Boolean).join(' · ');
+      r.appendChild(nm);
+      r.appendChild(el('span', 'fdias', v.faltam < 0 ? 'venceu' : v.faltam === 0 ? 'hoje' : v.faltam + ' d'));
+      const z = el('button', 'fbt zap', '⟳'); z.title = 'Avisar no WhatsApp que o prazo está acabando';
       z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
-      const t = el('button', 'mini', '✎'); t.title = 'Registrar a troca do anúncio';
+      const t = el('button', 'fbt', '✎'); t.title = 'Registrar a troca do anúncio';
       t.onclick = e => { e.stopPropagation(); trocarAnuncio(c.id); };
-      ac.append(z, t); r.appendChild(ac);
+      r.append(z, t);
       r.onclick = () => abrirCliente(c.id);
+      r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
       pb.appendChild(r);
     });
+    if (!verPrazo && comPrazo.length > 12) {
+      const m = el('button', 'filamais', '+ ' + (comPrazo.length - 12) + ' com prazo');
+      m.onclick = () => { verPrazo = true; render(); };
+      pb.appendChild(m);
+    }
     tela.appendChild(pb);
   }
 
@@ -1001,12 +1001,13 @@ function telaCidade() {
       (doMesPassado ? ' · ' + doMesPassado + ' de ' + mesNome(mesPassado) : ''),
       [verFila ? 'Ver menos' : 'Ver todos', () => { verFila = !verFila; render(); }]));
     const fb = el('div', 'box fila');
-    (verFila ? fila : fila.slice(0, 8)).forEach(({ c, d }) => {
+    (verFila ? fila : fila.slice(0, 12)).forEach(({ c, d }) => {
       const r = el('div', 'filarow'); r.tabIndex = 0; r.setAttribute('role', 'button');
       const pt = el('i', 'fdot ' + (d === null || d > 60 ? 'off' : d > 30 ? 'wait' : ''));
       r.appendChild(pt);
-      r.appendChild(el('span', 'fnome', c.empresa));
-      r.appendChild(el('span', 'fdata', c.ultAtualizacao ? br(c.ultAtualizacao) : '—'));
+      const nm = el('span', 'fnome', c.empresa);
+      nm.title = c.ultAtualizacao ? 'última troca em ' + br(c.ultAtualizacao) : 'nenhuma troca registrada';
+      r.appendChild(nm);
       r.appendChild(el('span', 'fdias', d === null ? 'nunca' : d + ' d'));
       const z = el('button', 'fbt zap', '⟳'); z.title = 'Convidar a atualizar pelo WhatsApp';
       z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
@@ -1017,8 +1018,8 @@ function telaCidade() {
       r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
       fb.appendChild(r);
     });
-    if (!verFila && fila.length > 8) {
-      const m = el('button', 'filamais', '+ ' + (fila.length - 8) + ' na fila');
+    if (!verFila && fila.length > 12) {
+      const m = el('button', 'filamais', '+ ' + (fila.length - 12) + ' na fila');
       m.onclick = () => { verFila = true; render(); };
       fb.appendChild(m);
     }
@@ -2263,7 +2264,7 @@ async function testarConexao() {
 function marcarAba() { [...$('#tabs').children].forEach(x => x.classList.toggle('on', x.dataset.aba === aba)); }
 $('#tabs').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  aba = b.dataset.aba; filtro = null; busca = ''; verEncerrados = verFila = false;
+  aba = b.dataset.aba; filtro = null; busca = ''; verEncerrados = verFila = verPrazo = false;
   marcarAba(); render();
 };
 $('#scrim').onclick = fechar;
