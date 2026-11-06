@@ -170,6 +170,23 @@ input::placeholder{color:var(--muted-2)}
 .row.atr{grid-template-columns:1fr 110px 96px}
 .row.chip{grid-template-columns:1fr auto auto}
 .row.prazo{grid-template-columns:40px 1fr auto auto}
+.box.fila{padding:2px 0}
+.filarow{display:flex;align-items:center;gap:9px;padding:6px 14px;cursor:pointer;border-radius:8px;
+  margin:0 4px;font-size:13px;line-height:1.3}
+.filarow:hover{background:var(--surface-2)}
+.fdot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);flex:none}
+.fdot.wait{background:var(--warn)} .fdot.off{background:var(--bad)}
+.fnome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.fdata{font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums;flex:none;width:46px;text-align:right}
+.fdias{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;width:52px;text-align:right}
+.fbt{border:0;background:none;color:var(--muted-2);width:26px;height:24px;flex:none;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;padding:0}
+.fbt:hover{background:var(--surface-3);color:var(--text)}
+.fbt.zap{color:var(--zap)}
+.fbt.zap:hover{background:var(--zap);color:#fff}
+.filamais{width:100%;border:0;background:none;color:var(--accent);font-size:12.5px;font-weight:550;
+  padding:9px;border-top:1px solid var(--line);margin-top:3px}
+.filamais:hover{background:var(--surface-2)}
 .tabela{width:100%;border-collapse:collapse;font-size:13.5px}
 .tabela th{text-align:left;font-weight:600;color:var(--muted-2);font-size:11px;text-transform:uppercase;
   letter-spacing:.05em;padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -404,7 +421,7 @@ const esc = s => (s == null ? '' : String(s)).replace(/[<>&"]/g, m => ({ '<': '&
 let DB = { clientes: [], eventos: [], atrasados: [] };
 let memoriaSomente = false;
 let aba = 'OLINDINA', filtro = null, busca = '', abertoId = null;
-let verEncerrados = false;
+let verEncerrados = false, verFila = false;
 
 const hoje = () => new Date();
 const iso = d => d.toISOString().slice(0, 10);
@@ -967,11 +984,11 @@ function telaCidade() {
     tela.appendChild(pb);
   }
 
-  /* fila de atualização */
+  /* fila de atualização — lembrete compacto */
   const mesPassado = somaMes(mesRef, -1);
   const fila = cs
     .filter(c => !(c.ultAtualizacao && c.ultAtualizacao.slice(0, 7) >= mesRef))
-    .map(c => ({ c, a: arteAtual(c), d: desde(c.ultAtualizacao) }))
+    .map(c => ({ c, d: desde(c.ultAtualizacao) }))
     .sort((x, y) => {
       if (!x.c.ultAtualizacao && !y.c.ultAtualizacao) return x.c.empresa.localeCompare(y.c.empresa, 'pt-BR');
       if (!x.c.ultAtualizacao) return -1;
@@ -979,44 +996,33 @@ function telaCidade() {
       return x.c.ultAtualizacao.localeCompare(y.c.ultAtualizacao);
     });
   const doMesPassado = fila.filter(x => x.c.ultAtualizacao && x.c.ultAtualizacao.slice(0, 7) === mesPassado).length;
-  tela.appendChild(bloco('Fila de atualização', fila.length
-    ? fila.length + ' sem trocar em ' + mesNome(mesRef) + (doMesPassado ? ' · ' + doMesPassado + ' de ' + mesNome(mesPassado) : '')
-    : 'todos já trocaram neste mês'));
-  const fb = el('div', 'box');
-  if (!fila.length) fb.appendChild(el('div', 'empty', 'Nenhum anúncio pendente de troca em ' + mesNome(mesRef) + '.'));
-  fila.forEach(({ c, a, d }) => {
-    const r = el('div', 'row prazo'); r.tabIndex = 0; r.setAttribute('role', 'button');
-    r.appendChild(avatar(c.empresa));
-    const n = el('div', 'nome', c.empresa);
-    n.appendChild(el('small', '', [
-      a && a.nota ? a.nota : (c.ultAtualizacao ? 'arte sem descrição' : 'nunca teve troca registrada'),
-      a && a.autor === 'designer' ? 'designer' : (a && a.autor ? 'feita por mim' : '')
-    ].filter(Boolean).join(' · ')));
-    r.appendChild(n);
-    const cor = d === null ? 'off' : (d > 60 ? 'off' : (d > 30 ? 'wait' : ''));
-    const p = el('div', 'pill ' + cor);
-    p.appendChild(el('i', 'pdot'));
-    p.appendChild(el('span', '', c.ultAtualizacao ? br(c.ultAtualizacao) : 'nunca'));
-    if (d !== null) p.appendChild(el('time', '', 'há ' + d + ' d'));
-    p.title = c.ultAtualizacao ? 'última troca em ' + br(c.ultAtualizacao) : 'nenhuma troca registrada';
-    r.appendChild(p);
-    const ac = el('div', 'acoes');
-    const z = el('button', 'mini zap', '⟳'); z.title = 'Convidar a atualizar pelo WhatsApp';
-    z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
-    const t = el('button', 'mini', '✎'); t.title = 'Registrar a troca do anúncio';
-    t.onclick = e => { e.stopPropagation(); trocarAnuncio(c.id); };
-    ac.append(z, t); r.appendChild(ac);
-    r.onclick = () => abrirCliente(c.id);
-    r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
-    fb.appendChild(r);
-  });
-  tela.appendChild(fb);
   if (fila.length) {
-    const lgF = el('div', 'legend');
-    lgF.innerHTML = '<span>Da troca mais antiga para a mais recente — o primeiro da lista é a prioridade.</span>' +
-      '<span><i style="background:var(--bad)"></i>+60 dias ou nunca</span>' +
-      '<span><i style="background:var(--warn)"></i>30 a 60 dias</span>';
-    tela.appendChild(lgF);
+    tela.appendChild(bloco('Fila de atualização', fila.length + ' sem trocar em ' + mesNome(mesRef) +
+      (doMesPassado ? ' · ' + doMesPassado + ' de ' + mesNome(mesPassado) : ''),
+      [verFila ? 'Ver menos' : 'Ver todos', () => { verFila = !verFila; render(); }]));
+    const fb = el('div', 'box fila');
+    (verFila ? fila : fila.slice(0, 8)).forEach(({ c, d }) => {
+      const r = el('div', 'filarow'); r.tabIndex = 0; r.setAttribute('role', 'button');
+      const pt = el('i', 'fdot ' + (d === null || d > 60 ? 'off' : d > 30 ? 'wait' : ''));
+      r.appendChild(pt);
+      r.appendChild(el('span', 'fnome', c.empresa));
+      r.appendChild(el('span', 'fdata', c.ultAtualizacao ? br(c.ultAtualizacao) : '—'));
+      r.appendChild(el('span', 'fdias', d === null ? 'nunca' : d + ' d'));
+      const z = el('button', 'fbt zap', '⟳'); z.title = 'Convidar a atualizar pelo WhatsApp';
+      z.onclick = e => { e.stopPropagation(); abrirConvite(c.id); };
+      const t = el('button', 'fbt', '✎'); t.title = 'Registrar a troca do anúncio';
+      t.onclick = e => { e.stopPropagation(); trocarAnuncio(c.id); };
+      r.append(z, t);
+      r.onclick = () => abrirCliente(c.id);
+      r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCliente(c.id); } };
+      fb.appendChild(r);
+    });
+    if (!verFila && fila.length > 8) {
+      const m = el('button', 'filamais', '+ ' + (fila.length - 8) + ' na fila');
+      m.onclick = () => { verFila = true; render(); };
+      fb.appendChild(m);
+    }
+    tela.appendChild(fb);
   }
 
   /* lista */
@@ -2257,7 +2263,7 @@ async function testarConexao() {
 function marcarAba() { [...$('#tabs').children].forEach(x => x.classList.toggle('on', x.dataset.aba === aba)); }
 $('#tabs').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  aba = b.dataset.aba; filtro = null; busca = ''; verEncerrados = false;
+  aba = b.dataset.aba; filtro = null; busca = ''; verEncerrados = verFila = false;
   marcarAba(); render();
 };
 $('#scrim').onclick = fechar;
